@@ -1,68 +1,39 @@
 package main
 
-import (
-	"fmt"
-	"math/rand"
-	"sync"
-)
-
-type ConcurrentQueue struct {
-	queue []int32
-	lock  sync.Mutex
+type Queue struct{
+	queue []int32;
 }
 
-func (q *ConcurrentQueue) Enqueue(item int32) {
-	q.lock.Lock()
-	defer q.lock.Unlock()
-	q.queue = append(q.queue, item)
+
+func (q *Queue) Enqueue(v int32){
+	q.queue=append(q.queue, v)
 }
 
-func (q *ConcurrentQueue) Dequeue() int32 {
-	q.lock.Lock()
-	defer q.lock.Unlock()
-
-	if len(q.queue) == 0 {
-		panic("removing from an empty queue")
+func (q *Queue) Dequeue() int32{
+	if(len(q.queue)==0){
+		panic("Queue is empty")
 	}
-	item := q.queue[0]
-	q.queue = q.queue[1:]
-	return item
+	temp:=q.queue[0];
+	q.queue=q.queue[1:];
+	return temp;
 }
 
-func (q *ConcurrentQueue) Size() int {
-	q.lock.Lock()
-	defer q.lock.Unlock()
-	return len(q.queue)
-}
-
-const NUM_THREADS int = 1000000
 
 func main() {
-	queue := &ConcurrentQueue{
-		queue: make([]int32, 0),
+	q:=Queue{
+		queue:make([]int32,0),
+	}
+	q.Enqueue(1)
+	q.Enqueue(2)
+	q.Enqueue(3)
+	q.Enqueue(4)
+	q.Enqueue(5)
+	q.Enqueue(6)
+	q.Enqueue(7)
+	q.Enqueue(8)
+	q.Enqueue(9)
+	for i:=0;i<10;i++{
+		println(q.Dequeue())
 	}
 
-	var wgE sync.WaitGroup
-	var wgD sync.WaitGroup
-
-	for i := 0; i < NUM_THREADS; i++ {
-		wgE.Add(1)
-		go func() {
-			queue.Enqueue(rand.Int31())
-			wgE.Done()
-		}()
-	}
-
-	for i := 0; i < NUM_THREADS; i++ {
-		wgD.Add(1)
-		go func() {
-			queue.Dequeue()
-			wgD.Done()
-		}()
-	}
-
-	wgE.Wait()
-	wgD.Wait()
-
-	fmt.Println("size:", queue.Size())
 }
