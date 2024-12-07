@@ -1,30 +1,52 @@
 package main
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+	"time"
+)
 
-
-type Job func()
+type Task func()
 
 type Pool struct{
-	workQueue chan Job
+	workers chan Task
 	wg sync.WaitGroup
 }
 
-func NewPool(worker int)*Pool{
+func InitPool(workersCnt int)Pool{
 	pool:=Pool{
-	workQueue: make(chan Job),
+		workers: make(chan Task),
 	}
-	pool.wg.Add(worker);
-	for i:=0;i<worker;i++{
+	pool.wg.Add(workersCnt);
+	for i:=0;i<workersCnt;i++{
 		go func(){
-			defer pool.wg.Done()
-			
+			defer pool.wg.Done();
+			for job:=range pool.workers{
+				job()
+			}
 		}()
 	}
-	return &pool;
+	return pool;
+}
+
+func (p *Pool) AddTask(task Task){
+	p.workers<-task
+}
+
+func (p *Pool) Wait(){
+	close(p.workers)
+	p.wg.Wait()
 }
 
 func main(){
-	pool:=NewPool
+	pool:=InitPool(5);
 
+	for i:=0;i<30;i++{
+		task:=func(){
+			time.Sleep(1*time.Second)
+			fmt.Println("Task Done!")
+		}
+		pool.AddTask(task)
+	}
+	pool.Wait()
 }
