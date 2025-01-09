@@ -1,14 +1,13 @@
 consistent-hashing:
 	@echo "Building consistent-hashing..."
-	cd consistent-hashing && make $@
+	cd consistent-hashing && go run .
 
 thread-pool:
 	@echo "Building thread-pool..."
-	cd thread-pool && make $@
+	cd thread-pool && make go run .
 
 websockets:
 	@echo "Building websockets..."
-	cd websockets && make $@
+	cd websockets && make go run .
 
-.PHONY: all
-all: consistent-hashing thread-pool websockets
+.PHONY: consistent-hashing thread-pool websockets
