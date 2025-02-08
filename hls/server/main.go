@@ -54,9 +54,20 @@ func GetFile(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
+func Hls() {
+	hlsDir:="./hls"
+	_,err:=os.Stat(hlsDir)
+	if os.IsNotExist(err){
+		log.Fatalf("./hls does not exist %v",err)
+	}
+	fs:=http.FileServer(http.Dir(hlsDir))
+	http.Handle("/hls/",http.StripPrefix("/hls/",fs))
+}
+
 
 func main(){
 	http.HandleFunc("/", GetFile)
+	Hls()
 	port:=":8080"
 	log.Printf("Starting server on port %s",port)
 	http.ListenAndServe(port,nil)

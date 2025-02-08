@@ -1,7 +1,11 @@
+import VideoPlayer from "./VideoPlayer";
+
 const App = () => {
   return (
-    <div></div>
-  )
-}
+    <div>
+      <VideoPlayer />
+    </div>
+  );
+};
 
 export default App;
