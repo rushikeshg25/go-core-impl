@@ -7,10 +7,24 @@ import (
 	"os"
 )
 
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow all origins
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
 
 func GetFile(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost && r.URL.Path == "/" {
-		err := r.ParseMultipartForm(10 << 20)
+		err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 		if err != nil {
 			log.Println("Error parsing form:", err)
 			http.Error(w, "Failed to parse form", http.StatusBadRequest)
@@ -47,7 +61,7 @@ func GetFile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Println("File saved" + header.Filename)
+		log.Println("File saved: " + header.Filename)
 		w.Write([]byte("File uploaded successfully"))
 		return
 	}
@@ -55,20 +69,23 @@ func GetFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func Hls() {
-	hlsDir:="./hls"
-	_,err:=os.Stat(hlsDir)
-	if os.IsNotExist(err){
-		log.Fatalf("./hls does not exist %v",err)
+	hlsDir := "./hls"
+	_, err := os.Stat(hlsDir)
+	if os.IsNotExist(err) {
+		log.Fatalf("./hls does not exist: %v", err)
 	}
-	fs:=http.FileServer(http.Dir(hlsDir))
-	http.Handle("/hls/",http.StripPrefix("/hls/",fs))
+	fs := http.FileServer(http.Dir(hlsDir))
+	http.Handle("/hls/", http.StripPrefix("/hls/", fs))
 }
 
+func main() {
+	http.Handle("/", enableCORS(http.HandlerFunc(GetFile)))
 
-func main(){
-	http.HandleFunc("/", GetFile)
 	Hls()
-	port:=":8080"
-	log.Printf("Starting server on port %s",port)
-	http.ListenAndServe(port,nil)
+
+	port := ":8080"
+	log.Printf("Starting server on port %s", port)
+	if err := http.ListenAndServe(port, nil); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
+	}
 }
