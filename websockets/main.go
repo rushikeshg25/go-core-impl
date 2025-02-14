@@ -1,33 +1,44 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net"
+	"net/http"
 )
 
+func main() {
+  http.Handle("/health", enableCORS(http.HandlerFunc(Health)))
+  http.Handle("/ws", enableCORS(http.HandlerFunc(WsHandler)))
 
-func main(){
-  fmt.Println("Websocket:")
-  listner,err:=net.Listen("tcp",":8080");
-  if err!=nil{
-	log.Fatal("Tcp Server Error");
-   }
-  for{
-    log.Println("Listening on Port 8080")
-    conn,err:=listner.Accept()
-    if err!=nil{
-      log.Fatal("unable to connect with the client");
-    }
-    go processConn(conn);
+  port := ":8080"
+  log.Printf("Starting server on port %s", port)
+  if err := http.ListenAndServe(port, nil); err != nil {
+          log.Fatalf("Server failed to start: %v", err)
   }
+
 }
 
-func processConn(conn net.Conn){
-  buf:=make([]byte,1024);
-  _,err:=conn.Read(buf);
-  if err!=nil{
-    log.Fatal("Error Processing the Stream")
-  }
-  log.Printf("%s",buf);
+
+func WsHandler(w http.ResponseWriter,r *http.Request){
+
+}
+
+func Health(w http.ResponseWriter,r *http.Request){
+   w.WriteHeader(http.StatusOK)
+   w.Write([]byte("Healthy"))
+   
+}
+
+func enableCORS(next http.Handler) http.Handler {
+  return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+          w.Header().Set("Access-Control-Allow-Origin", "*") // Allow all origins
+          w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+          w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+          if r.Method == "OPTIONS" {
+                  w.WriteHeader(http.StatusOK)
+                  return
+          }
+
+          next.ServeHTTP(w, r)
+  })
 }
