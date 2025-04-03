@@ -1,5 +1,5 @@
 consistent-hashing:
-	@echo "Building consistent-hashing..."
+	@echo "Building and Running consistent-hashing..."
 	cd consistent-hashing && go run .
 
 thread-pool:
