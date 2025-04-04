@@ -24,7 +24,7 @@ func NewEventLoop() *EventLoop {
 	}
 }
 
-func (el *EventLoop) Start() {
+func (el *EventLoop) Start() *sync.WaitGroup {
 	var wg sync.WaitGroup
 	pool := make(chan struct{}, 5) //For async tasks
 
@@ -50,20 +50,28 @@ func (el *EventLoop) Start() {
 						)
 					}
 				}()
+			} else {
+				e.Task()
+			}
+		case e := <-el.Callbacks:
+			e.Task()
+		case stop := <-el.stop:
+			if stop {
+				return
 			}
 		}
 	}
-
+	return &wg
 }
 
-func AddEvent(el *EventLoop, event *Event) {
+func (el *EventLoop) AddEvent(event *Event) {
 	el.Events <- *event
+}
+
+func (el *EventLoop) StopEventLoop() {
+	el.stop <- true
 }
 
 func AddCallback(el *EventLoop, event *Event) {
 	el.Callbacks <- *event
-}
-
-func StopEventLoop(el *EventLoop) {
-	el.stop <- true
 }
