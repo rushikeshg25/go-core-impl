@@ -1,0 +1,6 @@
+[submodule "wal-go"]
+	path = wal-go
+	url = https://github.com/rushikeshg25/wal-go
+[submodule "loadbalancer"]
+	path = loadbalancer
+	url = https://github.com/rushikeshg25/loadbalancer
