@@ -1,0 +1,3 @@
+package durablelogs
+
+func MustMarshal()

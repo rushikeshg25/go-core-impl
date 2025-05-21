@@ -24,6 +24,7 @@ const (
 type Mesage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Log           string                 `protobuf:"bytes,1,opt,name=log,proto3" json:"log,omitempty"`
+	Timestamp     string                 `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -65,13 +66,21 @@ func (x *Mesage) GetLog() string {
 	return ""
 }
 
+func (x *Mesage) GetTimestamp() string {
+	if x != nil {
+		return x.Timestamp
+	}
+	return ""
+}
+
 var File_message_proto protoreflect.FileDescriptor
 
 const file_message_proto_rawDesc = "" +
 	"\n" +
-	"\rmessage.proto\x12\vdurablelogs\"\x1a\n" +
+	"\rmessage.proto\x12\vdurablelogs\"8\n" +
 	"\x06Mesage\x12\x10\n" +
-	"\x03log\x18\x01 \x01(\tR\x03logB\x10Z\x0edurablelogs/pbb\x06proto3"
+	"\x03log\x18\x01 \x01(\tR\x03log\x12\x1c\n" +
+	"\ttimestamp\x18\x02 \x01(\tR\ttimestampB\x10Z\x0edurablelogs/pbb\x06proto3"
 
 var (
 	file_message_proto_rawDescOnce sync.Once
