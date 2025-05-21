@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package durablelogs;
+
+option go_package = "durablelogs/pb";
+
+message Mesage{
+    string log = 1;
+}
