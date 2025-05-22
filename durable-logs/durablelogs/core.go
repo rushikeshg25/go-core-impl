@@ -26,6 +26,14 @@ type DurableLogger struct {
 
 func NewDLServer(directory string, maxPerFile int) *DurableLogger {
 
+	dl := &DurableLogger{
+		directory:         directory,
+		maxPerFile:        maxPerFile,
+		logsInCurrentFile: 0,
+		bufWriter:         nil,
+		currentFile:       nil,
+		currentFileNum:    0,
+	}
 	if err := os.MkdirAll(directory, 0755); err != nil {
 		panic(err)
 	}
@@ -41,18 +49,24 @@ func NewDLServer(directory string, maxPerFile int) *DurableLogger {
 			panic(err)
 		}
 	} else {
-		// TODO: Handle reading the most recent WAL file
-		//TODO : IF wal files are present then read the most recent one and start from there
+		latestFile := files[len(files)-1]
+		file, err = os.OpenFile(directory+"/"+latestFile.Name(), os.O_RDWR, 0755)
+		if err != nil {
+			panic(err)
+		}
+		lastChar := latestFile.Name()[len(latestFile.Name())-1:]
+		num, err := strconv.Atoi(lastChar)
+		if err != nil {
+			panic(err)
+		}
+		dl.logsInCurrentFile = dl.maxPerFile
+		dl.currentFileNum = num
+		dl.currentFile = file
 	}
 
-	return &DurableLogger{
-		directory:         directory,
-		maxPerFile:        maxPerFile,
-		logsInCurrentFile: 0,
-		bufWriter:         bufio.NewWriter(file),
-		currentFile:       file,
-		currentFileNum:    0,
-	}
+	dl.bufWriter = bufio.NewWriter(file)
+
+	return dl
 }
 
 func (dl *DurableLogger) Log(message string) {
