@@ -3,8 +3,9 @@ package durablelogs
 import (
 	"bufio"
 	"durablelogs/durablelogs/pb"
-	"fmt"
+	"encoding/binary"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -14,12 +15,13 @@ const (
 )
 
 type DurableLogger struct {
-	directory      string
-	maxPerFile     int
-	bufWriter      *bufio.Writer
-	currentFile    *os.File
-	mu             sync.Mutex
-	currentFileNum int
+	directory         string
+	maxPerFile        int
+	bufWriter         *bufio.Writer
+	currentFile       *os.File
+	mu                sync.Mutex
+	currentFileNum    int
+	logsInCurrentFile int
 }
 
 func NewDLServer(directory string, maxPerFile int) *DurableLogger {
@@ -33,27 +35,29 @@ func NewDLServer(directory string, maxPerFile int) *DurableLogger {
 	if err != nil {
 		panic(err)
 	}
-	if files != nil {
-		//TODO : IF wal files are present then read the most recent one and start from there
-	} else {
+	if len(files) == 0 {
 		file, err = os.Create(directory + "/" + segmentPrefix + "0")
 		if err != nil {
 			panic(err)
 		}
+	} else {
+		// TODO: Handle reading the most recent WAL file
+		//TODO : IF wal files are present then read the most recent one and start from there
 	}
 
 	return &DurableLogger{
-		directory:      directory,
-		maxPerFile:     maxPerFile,
-		bufWriter:      bufio.NewWriter(file),
-		currentFile:    file,
-		currentFileNum: 0,
+		directory:         directory,
+		maxPerFile:        maxPerFile,
+		logsInCurrentFile: 0,
+		bufWriter:         bufio.NewWriter(file),
+		currentFile:       file,
+		currentFileNum:    0,
 	}
 }
 
 func (dl *DurableLogger) Log(message string) {
+	var err error
 	dl.mu.Lock()
-	defer dl.mu.Unlock()
 
 	logEntry := &pb.Log{
 		Log:       message,
@@ -61,12 +65,25 @@ func (dl *DurableLogger) Log(message string) {
 	}
 
 	marsheledLog := MustMarshal(logEntry)
+	marsheledLogSize := len(marsheledLog)
 
-	if len(dl.buffer) == dl.maxPerFile {
-		dl.Flush()
+	err = binary.Write(dl.bufWriter, binary.LittleEndian, uint32(marsheledLogSize))
+	if err != nil {
+		panic(err)
 	}
-	fmt.Println(marsheledLog)
-	// dl.buffer = append(dl.buffer, marsheledLog)
+
+	err = binary.Write(dl.bufWriter, binary.LittleEndian, marsheledLog)
+	if err != nil {
+		panic(err)
+	}
+
+	dl.logsInCurrentFile++
+	dl.mu.Unlock()
+
+	if dl.logsInCurrentFile == dl.maxPerFile {
+		dl.Flush()
+		dl.NewFile()
+	}
 
 }
 
@@ -75,9 +92,28 @@ func (dl *DurableLogger) GetBufferedLogs() []string {
 }
 
 func (dl *DurableLogger) GetCurrentFile() int {
-	return dl.currentFile
+	return dl.currentFileNum
 }
 
 func (dl *DurableLogger) Flush() {
+	dl.mu.Lock()
+	defer dl.mu.Unlock()
+	dl.bufWriter.Flush()
+}
 
+func (dl *DurableLogger) Close() {
+	dl.Flush()
+	dl.currentFile.Close()
+}
+
+func (dl *DurableLogger) NewFile() {
+	dl.currentFile.Close()
+	dl.logsInCurrentFile = 0
+	dl.currentFileNum++
+	file, err := os.Create(dl.directory + "/" + segmentPrefix + strconv.Itoa(dl.currentFileNum))
+	if err != nil {
+		panic(err)
+	}
+	dl.currentFile = file
+	dl.bufWriter = bufio.NewWriter(file)
 }
