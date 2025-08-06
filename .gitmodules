@@ -4,3 +4,6 @@
 [submodule "loadbalancer"]
 	path = loadbalancer
 	url = https://github.com/rushikeshg25/loadbalancer
+[submodule "tricolor-gc"]
+	path = tricolor-gc
+	url = https://github.com/rushikeshg25/tricolor-gc
