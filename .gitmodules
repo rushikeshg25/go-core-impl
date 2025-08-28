@@ -7,3 +7,6 @@
 [submodule "tricolor-gc"]
 	path = tricolor-gc
 	url = https://github.com/rushikeshg25/tricolor-gc
+[submodule "token-bucket"]
+	path = token-bucket
+	url = https://github.com/rushikeshg25/token-bucket
