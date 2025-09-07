@@ -10,3 +10,6 @@
 [submodule "token-bucket"]
 	path = token-bucket
 	url = https://github.com/rushikeshg25/token-bucket
+[submodule "p2p-file-sharing"]
+	path = p2p-file-sharing
+	url = https://github.com/rushikeshg25/p2p-file-sharing
