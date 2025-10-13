@@ -13,3 +13,6 @@
 [submodule "p2p-file-sharing"]
 	path = p2p-file-sharing
 	url = https://github.com/rushikeshg25/p2p-file-sharing
+[submodule "bp-tree"]
+	path = bp-tree
+	url = https://github.com/rushikeshg25/bp-tree.git
