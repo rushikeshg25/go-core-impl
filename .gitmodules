@@ -16,3 +16,6 @@
 [submodule "bp-tree"]
 	path = bp-tree
 	url = https://github.com/rushikeshg25/bp-tree.git
+[submodule "adaptive-bitrate-streaming"]
+	path = adaptive-bitrate-streaming
+	url = https://github.com/rushikeshg25/adaptive-bitrate-streaming.git

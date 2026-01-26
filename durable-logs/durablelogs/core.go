@@ -131,3 +131,5 @@ func (dl *DurableLogger) NewFile() {
 	dl.currentFile = file
 	dl.bufWriter = bufio.NewWriter(file)
 }
+
+func MustMarshal(v interface{})
