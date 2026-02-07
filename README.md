@@ -2,137 +2,63 @@
 
 This repository serves as a comprehensive collection of low-level system implementations, distributed algorithms, and core computer science concepts authored in Go. Each subdirectory contains a self-contained module demonstrating a specific technical challenge or architectural pattern.
 
-## Table of Contents
+### Adaptive Bitrate Streaming
+Implments logic for dynamically adjusting video quality based on network conditions. It monitors bandwidth availability and switches between different stream profiles to ensure smooth playback. This project demonstrates real-time decision-making in streaming media.
 
-- [Core Data Structures and Algorithms](#core-data-structures-and-algorithms)
-- [Distributed Systems](#distributed-systems)
-- [Networking and Communication](#networking-and-communication)
-- [Concurrency and Performance](#concurrency-and-performance)
-- [Storage and Logging](#storage-and-logging)
-- [Streaming and Multimedia](#streaming-and-multimedia)
-- [External Modules (Submodules)](#external-modules-submodules)
-- [Usage Information](#usage-information)
-
----
-
-## Core Data Structures and Algorithms
+### Adding NULL vs NOT NULL Column Benchmarking
+A specialized benchmarking tool designed to measure the performance impact of database schema changes. It specifically compares the speed and resource usage of adding NULLable versus NOT NULL columns. This helps in understanding low-level database engine behavior during migrations.
 
 ### Bloom Filter
-Location: `bloomfilter/`
-A probabilistic data structure used to test whether an element is a member of a set. It provides a highly space-efficient way to handle membership queries, with a possibility of false positives but no false negatives.
-- Implementation: Uses MurmurHash3 for efficient hashing.
-- Features: Configurable size and number of hash functions (k).
+A probabilistic, space-efficient data structure used for rapid membership testing. It uses MurmurHash3 to minimize false positives while maintaining zero false negatives. This implementation is ideal for caching layers and large-scale set operations where memory is constrained.
 
-### Event Loop
-Location: `event-loop/`
-An implementation of an asynchronous execution model, similar to those found in Node.js or browser environments.
-- Components: Event queue, callback queue, and a central loop.
-- Capabilities: Supports both synchronous and asynchronous task execution with callback management.
-
-### Real-time Leaderboard
-Location: `realtime-leaderboard/`
-A high-performance leaderboard system designed for real-time updates and queries.
-- Backend: Built using Redis for atomic operations and low-latency data access.
-- Functionality: Supports score updates, rank retrieval, and top-k queries.
-
----
-
-## Distributed Systems
+### B+ Tree
+A self-balancing tree data structure widely used in modern database indexing and file systems. It ensures efficient data storage, retrieval, and range queries by maintaining sorted data and providing logarithmic search time. This project showcases complex pointer management and node splitting/merging logic.
 
 ### Consistent Hashing
-Location: `consistent-hashing/`
-A distributed hashing scheme used to minimize reorganization when nodes are added or removed from a cluster.
-- Implementation: Uses a hash ring to map both items and storage nodes.
-- Advantages: Ensures data distribution stability, making it ideal for load balancers and distributed caches.
-
-### Kafka Consumer Groups and Advanced Patterns
-Location: `kafka-multiple-consumers-partitions/`
-A detailed exploration of Apache Kafka's advanced features and architectural patterns.
-- Consumer Groups: Demonstrates how partitions are balanced across multiple consumers for horizontal scaling.
-- Exact-Once Semantics: Implementation of transactional producers to guarantee message delivery exactly once.
-- Advanced Patterns: Includes documentation and conceptual code for Dead Letter Queues (DLQ) and the Saga pattern for distributed transactions.
-
----
-
-## Networking and Communication
-
-### Multithreaded TCP Server
-Location: `multithreaded-tcp/`
-A concurrent TCP server implementation capable of handling multiple simultaneous client connections.
-- Model: Each incoming connection is handled by a separate goroutine, demonstrating Go's lightweight concurrency primitives.
-- Features: Basic request-response handling over raw TCP sockets.
-
-### WebSockets
-Location: `websockets/`
-Implementations of full-duplex communication channels over a single TCP connection.
-- Use Case: Real-time interactive applications requiring low-latency bi-directional messaging.
-
----
-
-## Concurrency and Performance
-
-### Thread Pool
-Location: `thread-pool/`
-A resource management pattern that maintains a pool of available workers to execute tasks concurrently.
-- Implementation: Uses Go channels for task distribution and WaitGroups for synchronization.
-- Objective: Limits the overhead of frequent thread/goroutine creation and destruction by reusing existing workers.
-
----
-
-## Storage and Logging
+A distributed hashing scheme that provides a stable way to map data across a dynamic cluster of nodes. It minimizes data reorganization when servers are added or removed, making it perfect for load balancers and distributed caches. The implementation uses a hash ring for efficient resource allocation.
 
 ### Durable Logs
-Location: `durable-logs/`
-A system for persistent message logging designed for reliability and crash recovery.
-- Serialization: Uses Protocol Buffers (Protobuf) for structured, efficient data storage.
-- Storage: Implements disk-backed logging to ensure data survives process restarts.
+A persistent message logging system engineered for high reliability and crash recovery. It utilizes Protocol Buffers for structured data serialization and implements disk-backed storage to ensure durability. This project is a core component for building databases and message brokers.
 
----
+### Event Loop
+An implementation of an asynchronous execution model similar to those found in Node.js. It features a central loop, task queues, and callback management to enable non-blocking I/O operations. This module demonstrates how to manage concurrency without traditional threading overhead.
 
-## Streaming and Multimedia
+### HLS (HTTP Live Streaming)
+A complete implementation of the Apple HLS protocol for modern video delivery. It handles segmenting raw video files and generating m3u8 playlists for adaptive streaming. This server-side implementation supports real-time playback across various devices and network conditions.
 
-### HTTP Live Streaming (HLS)
-Location: `hls/`
-A comprehensive implementation of the HLS protocol for video delivery.
-- Server: Handles segmenting and playlist (m3u8) generation.
-- Client: Capable of consuming HLS streams and managing buffer state.
+### Kafka Consumer Groups
+An exploration of advanced Apache Kafka architectural patterns and features. It demonstrates partition balancing across consumer groups, exact-once delivery semantics, and transactional producer logic. This is a practical guide for building scalable, fault-tolerant distributed streaming applications.
 
----
+### Load Balancer
+Implementing various traffic distribution algorithms, this project enhances application availability and performance. It explores strategies like Round Robin and Least Connections to manage requests across a backend cluster. This serves as a foundational tool for scaling web services.
 
-## External Modules (Submodules)
+### Multithreaded TCP Server
+A concurrent TCP server capable of handling thousands of simultaneous client connections. It leverages Go's lightweight goroutines to process each connection independently without blocking the main thread. This project demonstrates the power of Go's concurrency primitives for network programming.
 
-This repository integrates several standalone core projects as Git submodules:
+### P2P File Sharing
+Implementation of peer-to-peer communication protocols for decentralized data transfer. It explores neighbor discovery, chunk-based file distribution, and data integrity verification in a distributed network. This project provides insight into the architecture of systems like BitTorrent.
 
-- **Write-Ahead Log (WAL)** (`wal-go`): A foundational component for database durability and crash recovery.
-- **Load Balancer** (`loadbalancer`): Implementations of various traffic distribution algorithms.
-- **Tricolor Garbage Collection** (`tricolor-gc`): A demonstration of the tricolor marking algorithm used in modern GCs.
-- **Token Bucket** (`token-bucket`): A rate-limiting algorithm for controlling network traffic and API usage.
-- **P2P File Sharing** (`p2p-file-sharing`): Peer-to-peer communication and data transfer protocols.
-- **B+ Tree** (`bp-tree`): A self-balancing tree data structure widely used in database indexing.
-- **Adaptive Bitrate Streaming** (`adaptive-bitrate-streaming`): Logic for dynamically adjusting video quality based on network conditions.
+### Queue
+A collection of fundamental queue implementations for managing data flow and task execution. It includes thread-safe operations and demonstrates various queuing strategies for different use cases. These components are essential building blocks for any concurrent system.
 
----
+### Real-time Leaderboard
+A high-performance leaderboard system engineered for low-latency score updates and ranking. It utilizes Redis for atomic operations and fast data retrieval, supporting top-k queries and rank tracking. This implementation is designed for gaming and social applications with high throughput.
 
-## Usage Information
+### Task Scheduler
+A robust system for scheduling and managing background tasks with integrated monitoring. It features a visual terminal UI for real-time status tracking and job management. This project demonstrates complex task orchestration and interactive CLI design.
 
-### Prerequisites
-- Go 1.21 or higher.
-- Redis (required for `realtime-leaderboard`).
-- Kafka and Zookeeper (required for `kafka-multiple-consumers-partitions`).
+### Thread Pool
+A resource management pattern that maintains a set of workers to execute tasks concurrently. It optimizes performance by reducing the overhead of constant goroutine creation and destruction. This implementation uses Go channels for efficient task distribution and synchronization.
 
-### Building and Running
-Most sub-projects can be executed directly using `go run .` within their respective directories. A global `makefile` is also provided for convenience:
+### Token Bucket
+A classic rate-limiting algorithm used for traffic shaping and controlling API usage. It allows for bursts of traffic while maintaining a steady average rate, protecting backend services from overload. This module is a key component for implementing fair-use policies in web applications.
 
-```bash
-# Example: Run consistent hashing demonstration
-make consistent-hashing
+### Tricolor Garbage Collection
+A demonstration of the tricolor marking algorithm used in modern garbage collectors. It visualizes the process of identifying reachable objects and reclaiming memory in a concurrent environment. This project provides deep insight into the internal workings of Go's runtime.
 
-# Example: Run thread pool demonstration
-make thread-pool
-```
+### WAL (Write-Ahead Log)
+A foundational component for database durability, ensuring all data changes are logged before being applied. It provides the necessary primitives for crash recovery and transaction atomicity. This implementation is critical for anyone building custom storage engines or databases.
 
-### Note on Submodules
-If you have just cloned the repository, ensure submodules are initialized:
-```bash
-git submodule update --init --recursive
-```
+### WebSockets
+Implementation of full-duplex communication channels over a single TCP connection. It enables real-time, bi-directional messaging between clients and servers for interactive applications. This project demonstrates handling persistent connections and low-latency data exchange.
+
