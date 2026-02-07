@@ -19,3 +19,6 @@
 [submodule "adaptive-bitrate-streaming"]
 	path = adaptive-bitrate-streaming
 	url = https://github.com/rushikeshg25/adaptive-bitrate-streaming.git
+[submodule "task-scheduler"]
+	path = task-scheduler
+	url = https://github.com/rushikeshg25/task-scheduler.git
