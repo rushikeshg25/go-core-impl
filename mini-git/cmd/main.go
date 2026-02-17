@@ -1,3 +1,7 @@
-package mai
+package main
 
-func main() {}
+import "mini-git/internal"
+
+func main() {
+	internal.Execute()
+}

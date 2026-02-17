@@ -4,13 +4,13 @@ VERSION := 1.0
 all: build run clean
 
 build:
-	go build -o mini-git main.go
+	go build -o ./bin/mini-git cmd/main.go
 
 clean:
-	rm -f mini-git
+	rm -f ./bin/mini-git
 
 run:
-	./mini-git
+	./bin/mini-git
 
 version:
 	@echo "mini-git v$(VERSION)"
