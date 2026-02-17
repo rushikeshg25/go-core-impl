@@ -1,0 +1,3 @@
+package mai
+
+func main() {}
