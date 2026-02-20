@@ -24,3 +24,11 @@ func StoreObject(data []byte) (string, error) {
 
 	return hashStr, nil
 }
+
+func ReadObject(hashStr string) ([]byte, error) {
+	if len(hashStr) < 2 {
+		return nil, fmt.Errorf("invalid hash: %s", hashStr)
+	}
+	path := filepath.Join(".mini-git", "objects", hashStr[:2], hashStr[2:])
+	return os.ReadFile(path)
+}
