@@ -1,6 +1,6 @@
 module mini-git
 
-go 1.24.6
+go 1.23.0
 
 require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

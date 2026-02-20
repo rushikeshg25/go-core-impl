@@ -12,5 +12,11 @@ clean:
 run:
 	./bin/mini-git
 
+lint:
+	golangci-lint run
+
+lint-fix:
+	golangci-lint run --fix
+
 version:
 	@echo "mini-git v$(VERSION)"
