@@ -32,10 +32,12 @@ func initDB() {
 
 	query := `
 	CREATE TABLE IF NOT EXISTS test (
-		id INT AUTO_INCREMENT PRIMARY KEY,
-		name VARCHAR(255),
-		a TEXT,
-		b TEXT,
+		id         INT AUTO_INCREMENT PRIMARY KEY,
+		name       VARCHAR(255),
+		a          TEXT,
+		b          TEXT,
+		version    INT DEFAULT 1,
+		checksum   VARCHAR(64),
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);`
 	_, err = db.Exec(query)
