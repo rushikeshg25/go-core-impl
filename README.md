@@ -1,114 +1,117 @@
 # Go Core Implementations
 
-A collection of educational implementations and experiments in Go, covering data structures, concurrency, networking, storage, and distributed systems. Projects are independent and vary in completeness. Most have their own `go.mod`; the HLS project also includes a React/TypeScript client. Additional projects are linked as Git submodules.
+Implementations of core systems concepts in Go, spanning data structures, concurrency, storage, networking, and distributed systems.
 
-## Getting started
+This repository brings together independent libraries, command-line tools, and service demos for studying how these systems work. Each project focuses on a specific concept, with its own dependencies and development status. The HLS example also includes a React and TypeScript client.
 
-Clone with submodules to fetch all projects:
+[Projects](#projects) · [Git Submodules](#git-submodules) · [Getting Started](#getting-started) · [Development](#development)
+
+## Projects
+
+### Data Structures and Storage
+
+| Project | Implementation |
+| --- | --- |
+| [Bloom Filter](bloomfilter/) | Probabilistic membership testing with seeded MurmurHash3 hashes and configurable storage size and hash count. Exposes `New`, `Add`, `Test`, and `Clear` as a library. |
+| [Durable Logs](durable-logs/) | Experimental file logging with Protocol Buffers, buffered writes, and segment rotation. Buffered-log retrieval remains a placeholder. |
+| [Merkle Trees](merkle-trees/) | Directory hashing and comparison using BLAKE3. Provides commands to calculate root hashes, display trees, and report added, deleted, or modified entries. |
+| [Mini Git](mini-git/) | A Cobra-based version-control CLI with repository initialization, staging, commits, status, history, branches, and checkout. |
+| [Queue](queue/) | A slice-backed integer FIFO queue with a caller-supplied mutex and a concurrent producer/consumer demo. |
+
+### Concurrency and Database Experiments
+
+| Project | Implementation |
+| --- | --- |
+| [Concurrency Control](concurrency-control/) | A MySQL-backed Fiber API demonstrating optimistic concurrency control through version numbers or SHA-256 checksums. Rejects stale conflict tokens with HTTP `409`. |
+| [Event Loop](event-loop/) | Experimental task and callback queues with bounded goroutine concurrency for asynchronous work. Defines the loop API without an executable entry point. |
+| [Schema Change Benchmark](adding-null-vs-not-null-col-benchmarking/) | Compares MySQL column additions using `NULL` and `NOT NULL DEFAULT 0` across five iterations of 100,000 rows. Reports execution time and Go process memory statistics. |
+| [Thread Pool](thread-pool/) | Two worker-pool examples: a task-function pool and a jobs/results-channel implementation. Each runs as a separate program. |
+
+### Distributed Systems
+
+| Project | Implementation |
+| --- | --- |
+| [Consistent Hashing](consistent-hashing/) | A SHA-256 hash ring with node addition, removal, key assignment, and a command-line visualization of node positions. |
+| [Kafka Consumer Groups](kafka-multiple-consumers-partitions/) | Partitioned producers, consumer groups with manual offset commits, and transactional production using Confluent's Kafka client. Includes conceptual walkthroughs of messaging patterns and operations. |
+| [RAFT](RAFT/) | Leader election, randomized timeouts, and heartbeats over Go's `net/rpc`. Log replication and persistent storage remain planned. See the [demo and roadmap](RAFT/README.md). |
+
+### Networking and Applications
+
+| Project | Implementation |
+| --- | --- |
+| [HTTP Live Streaming](hls/) | A Go server for uploads and existing HLS playlists and segments, with a React/TypeScript player using Video.js. Upload transcoding and playlist generation are not implemented. |
+| [Multithreaded TCP Server](multithreaded-tcp/) | A newline-delimited TCP broadcast server with a goroutine per connection, buffered message delivery, and signal-driven shutdown handling. |
+| [Real-time Leaderboard](realtime-leaderboard/) | A Redis sorted-set HTTP API for score updates, player ranks, and the top ten players. Includes tests and environment-based configuration. See the [setup and API reference](realtime-leaderboard/README.md). |
+| [WebSockets](websockets/) | A manual HTTP upgrade handshake with `Sec-WebSocket-Accept` calculation and a health endpoint. Connections close after the handshake; frame exchange is not implemented. |
+
+## Git Submodules
+
+The following projects are maintained in separate repositories and pinned to specific commits. Initialize the submodules to populate their local directories. Refer to each upstream repository for its implementation details and setup requirements.
+
+| Project | Local Directory | Upstream |
+| --- | --- | --- |
+| Adaptive Bitrate Streaming | [adaptive-bitrate-streaming](adaptive-bitrate-streaming/) | [Repository](https://github.com/rushikeshg25/adaptive-bitrate-streaming) |
+| B+ Tree | [bp-tree](bp-tree/) | [Repository](https://github.com/rushikeshg25/bp-tree) |
+| Load Balancer | [loadbalancer](loadbalancer/) | [Repository](https://github.com/rushikeshg25/loadbalancer) |
+| P2P File Sharing | [p2p-file-sharing](p2p-file-sharing/) | [Repository](https://github.com/rushikeshg25/p2p-file-sharing) |
+| Task Scheduler | [task-scheduler](task-scheduler/) | [Repository](https://github.com/rushikeshg25/task-scheduler) |
+| Token Bucket | [token-bucket](token-bucket/) | [Repository](https://github.com/rushikeshg25/token-bucket) |
+| Tricolor Garbage Collection | [tricolor-gc](tricolor-gc/) | [Repository](https://github.com/rushikeshg25/tricolor-gc) |
+| Write-Ahead Log | [wal-go](wal-go/) | [Repository](https://github.com/rushikeshg25/wal-go) |
+
+## Getting Started
+
+### Clone the Repository
 
 ```bash
 git clone --recurse-submodules https://github.com/rushikeshg25/go-core-impl.git
 cd go-core-impl
 ```
 
-For an existing checkout, initialize the submodules with:
+To initialize submodules in an existing checkout:
 
 ```bash
 git submodule update --init --recursive
 ```
 
-Use the Go version declared in each project's `go.mod` or a newer compatible version. The modules stored directly in this repository currently declare versions from Go 1.21 through Go 1.25.0. Run Go commands from the relevant module directory; there is no root Go module.
+### Prerequisites
 
-For example:
+Use the Go version specified in the selected project's `go.mod`, or a newer compatible version. The modules maintained directly in this repository currently declare versions from Go 1.21 to Go 1.25.0.
+
+Additional requirements depend on the project:
+
+| Project | Requirements |
+| --- | --- |
+| Concurrency Control | MySQL. A Docker Compose configuration is included in the project directory. |
+| Schema Change Benchmark | MySQL with a `test` database. The benchmark creates and drops the `alter_benchmark` table. |
+| Kafka Consumer Groups | Kafka at `localhost:9092` for the messaging examples. |
+| Real-time Leaderboard | Redis. Connection settings are configurable through environment variables. |
+| HTTP Live Streaming | A JavaScript runtime and package manager for the Vite client, plus existing HLS playlists and segments for playback. |
+
+Several network demos use port `8080` by default. Run them separately or adjust their port configuration.
+
+### Run a Project
+
+Run commands from the relevant module directory. For example:
 
 ```bash
 cd consistent-hashing
 go run .
 ```
 
-Some projects require MySQL, Redis, Kafka, or a JavaScript runtime. Check their source configuration and linked documentation before running them. Several network demos default to port `8080`, so run them separately or adjust their ports.
+Projects with specific entry points or arguments use the following commands, relative to their module directories:
 
-## Projects in this repository
+| Project | Command |
+| --- | --- |
+| Concurrency Control | `go run . -v` for version mode or `go run . -c` for checksum mode |
+| Merkle Trees | `go run . hash <dir>`, `go run . print <dir>`, or `go run . diff <dir1> <dir2>` |
+| Mini Git | `go run ./cmd --help` |
+| Thread Pool | `go run main.go` or `go run approach1.go` |
 
-### [Adding NULL vs NOT NULL Column Benchmarking](adding-null-vs-not-null-col-benchmarking/)
+For Kafka, running without arguments lists the available modes. For RAFT, follow the three-node instructions in its README. The HLS server module is in `hls/server`, and the client package scripts are in `hls/client/package.json`.
 
-Compares MySQL `ALTER TABLE` timings for adding a nullable integer column versus a `NOT NULL DEFAULT 0` column, using 100,000 rows over five iterations. It also reports Go process memory statistics. Requires MySQL and a `test` database; the benchmark creates and drops the `alter_benchmark` table.
+## Development
 
-### [Bloom Filter](bloomfilter/)
+Each project is maintained independently. There is no root Go module or repository-wide build command. Build and test within the selected module, using its documented entry point and required services. Bloom Filter is a library, and Event Loop currently has no executable entry point.
 
-A Bloom filter library using seeded MurmurHash3 hashes, with `New`, `Add`, `Test`, and `Clear` operations. Supports probabilistic membership checks with configurable storage size and hash count. This is a library package, with no executable demo.
-
-### [Concurrency Control](concurrency-control/)
-
-A Fiber HTTP API backed by MySQL that demonstrates optimistic concurrency control using either version numbers or SHA-256 checksums. Clients submit a conflict token when updating a record, and stale updates receive HTTP `409`. Includes tests and a MySQL Docker Compose configuration. Run with `go run . -v` for version mode or `go run . -c` for checksum mode after starting MySQL.
-
-### [Consistent Hashing](consistent-hashing/)
-
-A hash ring using SHA-256 and sorted node positions. Supports adding and removing storage nodes, assigning keys to nodes, and printing the ring's positions. Includes a small command-line demo.
-
-### [Durable Logs](durable-logs/)
-
-An experimental file logger that serializes timestamped entries with Protocol Buffers, buffers writes, and rotates log segments after a configured entry count. Includes a logging demo; reading buffered logs is currently a placeholder.
-
-### [Event Loop](event-loop/)
-
-An experimental event loop with separate channels for tasks and callbacks, plus a bounded pool of goroutines for asynchronous tasks. The source defines the loop API but currently has no `main` entry point.
-
-### [HLS (HTTP Live Streaming)](hls/)
-
-A Go HTTP server for file uploads and serving existing HLS playlists and segments, paired with a React/TypeScript client using Video.js. The server does not currently transcode uploads or generate playlists. The server module is in `hls/server`; the Vite client and its package scripts are in `hls/client`.
-
-### [Kafka Consumer Groups](kafka-multiple-consumers-partitions/)
-
-Command-line examples of partitioned producers, consumer groups with manual offset commits, and a transactional producer using Confluent's Kafka client. Also includes printed walkthroughs of dead-letter queues, sagas, monitoring, and schema evolution. Messaging examples expect Kafka at `localhost:9092`; run without arguments to list the available modes.
-
-### [Merkle Trees](merkle-trees/)
-
-A directory Merkle tree CLI using BLAKE3 hashes. Supports `hash <dir>` to print a root hash, `print <dir>` to display the tree, and `diff <dir1> <dir2>` to report added, deleted, or modified entries. For example, run `go run . hash .` from the module directory.
-
-### [Mini Git](mini-git/)
-
-A small version-control CLI built with Cobra, with commands for `init`, `add`, `commit`, `status`, `log`, `branch`, and `checkout`. Includes tests and a Makefile for building the executable. Run `go run ./cmd --help` from the module directory to see the commands.
-
-### [Multithreaded TCP Server](multithreaded-tcp/)
-
-A TCP broadcast server using a goroutine per connection, a buffered message channel, and a mutex-protected client registry. Reads newline-delimited messages and broadcasts them to connected clients. Listens on port `8080` and includes signal-driven shutdown handling.
-
-### [Queue](queue/)
-
-A slice-backed integer FIFO queue with enqueue and dequeue operations that accept a caller-supplied mutex. Includes a demo that launches concurrent producers and consumers.
-
-### [RAFT](RAFT/)
-
-An in-progress Raft implementation demonstrating leader election, randomized timeouts, and heartbeats over Go's `net/rpc`. Log replication and persistent storage remain planned. See the [RAFT README](RAFT/README.md) for the three-node demo and roadmap.
-
-### [Real-time Leaderboard](realtime-leaderboard/)
-
-A Redis sorted-set leaderboard exposed through an HTTP API for updating scores, retrieving a player's rank, and listing the top ten players. Includes tests and environment-based configuration. See the [leaderboard README](realtime-leaderboard/README.md) for setup and API examples.
-
-### [Thread Pool](thread-pool/)
-
-Two worker-pool demos using goroutines and channels: a task-function pool in `main.go` and a jobs/results-channel example in `approach1.go`. Each file has its own `main` function, so run them separately with `go run main.go` or `go run approach1.go`.
-
-### [WebSockets](websockets/)
-
-A manual WebSocket HTTP upgrade handshake, including computation of `Sec-WebSocket-Accept`, plus a health endpoint. The connection closes after the handshake; WebSocket frame exchange and persistent messaging are not implemented yet.
-
-## Projects linked as Git submodules
-
-These projects live in separate repositories, pinned to commits by this repository. Their directories may be empty until submodules are initialized. Follow the upstream links for implementation details and setup instructions.
-
-| Project | Directory | Upstream repository |
-| --- | --- | --- |
-| Adaptive Bitrate Streaming | [adaptive-bitrate-streaming](adaptive-bitrate-streaming/) | [Source](https://github.com/rushikeshg25/adaptive-bitrate-streaming) |
-| B+ Tree | [bp-tree](bp-tree/) | [Source](https://github.com/rushikeshg25/bp-tree) |
-| Load Balancer | [loadbalancer](loadbalancer/) | [Source](https://github.com/rushikeshg25/loadbalancer) |
-| P2P File Sharing | [p2p-file-sharing](p2p-file-sharing/) | [Source](https://github.com/rushikeshg25/p2p-file-sharing) |
-| Task Scheduler | [task-scheduler](task-scheduler/) | [Source](https://github.com/rushikeshg25/task-scheduler) |
-| Token Bucket | [token-bucket](token-bucket/) | [Source](https://github.com/rushikeshg25/token-bucket) |
-| Tricolor Garbage Collection | [tricolor-gc](tricolor-gc/) | [Source](https://github.com/rushikeshg25/tricolor-gc) |
-| WAL (Write-Ahead Log) | [wal-go](wal-go/) | [Source](https://github.com/rushikeshg25/wal-go) |
-
-## Keeping this index current
-
-When adding, renaming, or removing a project, update its entry and link here in the same change. Describe the behavior currently implemented, identify unfinished features, and document any special entry point or external service requirement. For submodules, keep the directory and upstream URL aligned with [.gitmodules](.gitmodules).
+When adding or changing a project, update this catalog in the same change. Keep descriptions aligned with implemented behavior, record relevant setup requirements, and keep submodule paths and upstream URLs consistent with [.gitmodules](.gitmodules).
