@@ -1,6 +1,6 @@
 # RAFT Consensus Algorithm in Go
 
-A robust, educational implementation of the RAFT consensus algorithm from scratch in Go. This project aims to demonstrate the core principles of distributed consensus—Leader Election, Log Replication, and Safety—as described in the original whitepaper.
+A robust, educational implementation of the RAFT consensus algorithm from scratch in Go. This project aims to demonstrate the core principles of distributed consensus (Leader Election, Log Replication, and Safety) as described in the original whitepaper.
 
 ## Overview
 

@@ -24,7 +24,7 @@ func CompareTrees(a, b *Node) []Difference {
 
 // compareTrees is the recursive helper for CompareTrees.
 func compareTrees(a, b *Node, diffs *[]Difference) {
-	// If both hashes match, the entire subtree is identical — skip.
+	// If both hashes match, the entire subtree is identical. Skip it.
 	if a.Hash == b.Hash {
 		return
 	}
@@ -48,7 +48,7 @@ func compareTrees(a, b *Node, diffs *[]Difference) {
 
 		if aChild.Hash != bChild.Hash {
 			if aChild.IsDir && bChild.IsDir {
-				// Both are directories — recurse deeper
+				// Both are directories. Recurse deeper.
 				compareTrees(aChild, bChild, diffs)
 			} else {
 				// File was modified (or type changed, e.g., file→dir)
