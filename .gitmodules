@@ -28,3 +28,6 @@
 [submodule "monsoon"]
 	path = monsoon
 	url = https://github.com/rushikeshg25/monsoon
+[submodule "in-memory-hash-index"]
+	path = in-memory-hash-index
+	url = https://github.com/rushikeshg25/in-memory-hash-index
