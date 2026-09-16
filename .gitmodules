@@ -37,3 +37,6 @@
 [submodule "checksum-corruption-detection"]
 	path = checksum-corruption-detection
 	url = https://github.com/rushikeshg25/checksum-corruption-detection
+[submodule "tombstone-deletes"]
+	path = tombstone-deletes
+	url = https://github.com/rushikeshg25/tombstone-deletes
