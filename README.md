@@ -62,6 +62,7 @@ The following projects are maintained in separate repositories and pinned to spe
 | Storage Compaction | [storage-compaction](storage-compaction/) | [Repository](https://github.com/rushikeshg25/storage-compaction) |
 | Task Scheduler | [task-scheduler](task-scheduler/) | [Repository](https://github.com/rushikeshg25/task-scheduler) |
 | Token Bucket | [token-bucket](token-bucket/) | [Repository](https://github.com/rushikeshg25/token-bucket) |
+| Tombstone Deletes | [tombstone-deletes](tombstone-deletes/) | [Repository](https://github.com/rushikeshg25/tombstone-deletes) |
 | Tricolor Garbage Collection | [tricolor-gc](tricolor-gc/) | [Repository](https://github.com/rushikeshg25/tricolor-gc) |
 | Write-Ahead Log | [wal-go](wal-go/) | [Repository](https://github.com/rushikeshg25/wal-go) |
 
