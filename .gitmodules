@@ -22,3 +22,6 @@
 [submodule "task-scheduler"]
 	path = task-scheduler
 	url = https://github.com/rushikeshg25/task-scheduler.git
+[submodule "append-only-storage"]
+	path = append-only-storage
+	url = https://github.com/rushikeshg25/append-only-storage
