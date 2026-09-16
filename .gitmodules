@@ -40,3 +40,6 @@
 [submodule "tombstone-deletes"]
 	path = tombstone-deletes
 	url = https://github.com/rushikeshg25/tombstone-deletes
+[submodule "storage-compaction"]
+	path = storage-compaction
+	url = https://github.com/rushikeshg25/storage-compaction
