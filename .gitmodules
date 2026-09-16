@@ -25,3 +25,6 @@
 [submodule "append-only-storage"]
 	path = append-only-storage
 	url = https://github.com/rushikeshg25/append-only-storage
+[submodule "monsoon"]
+	path = monsoon
+	url = https://github.com/rushikeshg25/monsoon
