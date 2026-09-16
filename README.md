@@ -59,6 +59,7 @@ The following projects are maintained in separate repositories and pinned to spe
 | Load Balancer | [loadbalancer](loadbalancer/) | [Repository](https://github.com/rushikeshg25/loadbalancer) |
 | Monsoon | [monsoon](monsoon/) | [Repository](https://github.com/rushikeshg25/monsoon) |
 | P2P File Sharing | [p2p-file-sharing](p2p-file-sharing/) | [Repository](https://github.com/rushikeshg25/p2p-file-sharing) |
+| Storage Compaction | [storage-compaction](storage-compaction/) | [Repository](https://github.com/rushikeshg25/storage-compaction) |
 | Task Scheduler | [task-scheduler](task-scheduler/) | [Repository](https://github.com/rushikeshg25/task-scheduler) |
 | Token Bucket | [token-bucket](token-bucket/) | [Repository](https://github.com/rushikeshg25/token-bucket) |
 | Tricolor Garbage Collection | [tricolor-gc](tricolor-gc/) | [Repository](https://github.com/rushikeshg25/tricolor-gc) |
