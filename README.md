@@ -51,6 +51,7 @@ The following projects are maintained in separate repositories and pinned to spe
 | Project | Local Directory | Upstream |
 | --- | --- | --- |
 | Adaptive Bitrate Streaming | [adaptive-bitrate-streaming](adaptive-bitrate-streaming/) | [Repository](https://github.com/rushikeshg25/adaptive-bitrate-streaming) |
+| Append-Only Storage | [append-only-storage](append-only-storage/) | [Repository](https://github.com/rushikeshg25/append-only-storage) |
 | B+ Tree | [bp-tree](bp-tree/) | [Repository](https://github.com/rushikeshg25/bp-tree) |
 | Load Balancer | [loadbalancer](loadbalancer/) | [Repository](https://github.com/rushikeshg25/loadbalancer) |
 | P2P File Sharing | [p2p-file-sharing](p2p-file-sharing/) | [Repository](https://github.com/rushikeshg25/p2p-file-sharing) |
