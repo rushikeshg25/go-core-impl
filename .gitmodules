@@ -31,3 +31,6 @@
 [submodule "in-memory-hash-index"]
 	path = in-memory-hash-index
 	url = https://github.com/rushikeshg25/in-memory-hash-index
+[submodule "concurrent-readers-single-writer"]
+	path = concurrent-readers-single-writer
+	url = https://github.com/rushikeshg25/concurrent-readers-single-writer
