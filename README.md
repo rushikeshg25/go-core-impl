@@ -55,6 +55,7 @@ The following projects are maintained in separate repositories and pinned to spe
 | B+ Tree | [bp-tree](bp-tree/) | [Repository](https://github.com/rushikeshg25/bp-tree) |
 | Checksum and Corruption Detection | [checksum-corruption-detection](checksum-corruption-detection/) | [Repository](https://github.com/rushikeshg25/checksum-corruption-detection) |
 | Concurrent Readers, Single Writer | [concurrent-readers-single-writer](concurrent-readers-single-writer/) | [Repository](https://github.com/rushikeshg25/concurrent-readers-single-writer) |
+| In-Memory Hash Index | [in-memory-hash-index](in-memory-hash-index/) | [Repository](https://github.com/rushikeshg25/in-memory-hash-index) |
 | Load Balancer | [loadbalancer](loadbalancer/) | [Repository](https://github.com/rushikeshg25/loadbalancer) |
 | P2P File Sharing | [p2p-file-sharing](p2p-file-sharing/) | [Repository](https://github.com/rushikeshg25/p2p-file-sharing) |
 | Task Scheduler | [task-scheduler](task-scheduler/) | [Repository](https://github.com/rushikeshg25/task-scheduler) |
