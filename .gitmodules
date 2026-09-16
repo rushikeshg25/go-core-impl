@@ -34,3 +34,6 @@
 [submodule "concurrent-readers-single-writer"]
 	path = concurrent-readers-single-writer
 	url = https://github.com/rushikeshg25/concurrent-readers-single-writer
+[submodule "checksum-corruption-detection"]
+	path = checksum-corruption-detection
+	url = https://github.com/rushikeshg25/checksum-corruption-detection
