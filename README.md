@@ -35,6 +35,19 @@ This repository brings together independent libraries, command-line tools, and s
 | [Kafka Consumer Groups](kafka-multiple-consumers-partitions/) | Partitioned producers, consumer groups with manual offset commits, and transactional production using Confluent's Kafka client. Includes conceptual walkthroughs of messaging patterns and operations. |
 | [RAFT](RAFT/) | Leader election, randomized timeouts, and heartbeats over Go's `net/rpc`. Log replication and persistent storage remain planned. See the [demo and roadmap](RAFT/README.md). |
 
+### Storage Engine Series
+
+These build up a storage engine one concept at a time, each in its own repository. They are independent Go modules with no dependency on one another: shared ideas are re-implemented rather than factored out, so each can be read on its own. All are tracked here as [submodules](#git-submodules).
+
+| Project | Implementation |
+| --- | --- |
+| [Append-Only Storage](append-only-storage/) | Record framing, byte offsets, partial writes, and `fsync` behavior. Design plan only; no implementation yet. |
+| [Checksum and Corruption Detection](checksum-corruption-detection/) | A CRC32C record log with a read-only verifier and a `crcverify` command. Reports the offset and both checksums of a damaged record, and repairs only a final record that EOF cut short. |
+| [In-Memory Hash Index](in-memory-hash-index/) | An on-disk key-value store whose live keys resolve through a custom open-addressed hash table with linear probing, deleted-slot tombstones, and probe-distribution statistics. |
+| [Concurrent Readers, Single Writer](concurrent-readers-single-writer/) | The same engine with concurrent reads and serialized mutations, a documented lock ordering, and deterministic tests over operation publication schedules. |
+| [Tombstone Deletes](tombstone-deletes/) | Logical deletion by appending tombstone records, with delete misses that write nothing, resurrection by a later put, and statistics for the space obsolete records hold. |
+| [Storage Compaction](storage-compaction/) | Reclaims that space by rewriting only live records into a candidate file and publishing it with an atomic rename, with fault injection at every protocol phase and subprocess crash tests. |
+
 ### Networking and Applications
 
 | Project | Implementation |
@@ -46,7 +59,7 @@ This repository brings together independent libraries, command-line tools, and s
 
 ## Git Submodules
 
-The following projects are maintained in separate repositories and pinned to specific commits. Initialize the submodules to populate their local directories. Refer to each upstream repository for its implementation details and setup requirements.
+The following projects are maintained in separate repositories and pinned to specific commits. Initialize the submodules to populate their local directories. The storage engine projects are described in the [catalog above](#storage-engine-series); for the rest, refer to each upstream repository for its implementation details and setup requirements.
 
 | Project | Local Directory | Upstream |
 | --- | --- | --- |
@@ -110,6 +123,7 @@ Projects with specific entry points or arguments use the following commands, rel
 
 | Project | Command |
 | --- | --- |
+| Checksum and Corruption Detection | `go run ./cmd/crcverify [-json] <file>` to check a log for damage |
 | Concurrency Control | `go run . -v` for version mode or `go run . -c` for checksum mode |
 | Merkle Trees | `go run . hash <dir>`, `go run . print <dir>`, or `go run . diff <dir1> <dir2>` |
 | Mini Git | `go run ./cmd --help` |
@@ -119,6 +133,6 @@ For Kafka, running without arguments lists the available modes. For RAFT, follow
 
 ## Development
 
-Each project is maintained independently. There is no root Go module or repository-wide build command. Build and test within the selected module, using its documented entry point and required services. Bloom Filter is a library, and Event Loop currently has no executable entry point.
+Each project is maintained independently. There is no root Go module or repository-wide build command. Build and test within the selected module, using its documented entry point and required services. Bloom Filter is a library, and Event Loop currently has no executable entry point. The storage engine projects are libraries as well, each with its own test suite; Checksum and Corruption Detection also ships the `crcverify` command.
 
 When adding or changing a project, update this catalog in the same change. Keep descriptions aligned with implemented behavior, record relevant setup requirements, and keep submodule paths and upstream URLs consistent with [.gitmodules](.gitmodules).
