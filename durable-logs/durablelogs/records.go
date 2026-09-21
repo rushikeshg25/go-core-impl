@@ -3,6 +3,7 @@ package durablelogs
 import (
 	"durablelogs/durablelogs/pb"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"google.golang.org/protobuf/proto"
 	"io"
@@ -56,6 +57,9 @@ func readSegment(path string, repair bool) ([]*pb.Log, error) {
 		valid := off
 		var h [4]byte
 		_, e = f.ReadAt(h[:], off)
+		if e != nil && !errors.Is(e, io.EOF) && !errors.Is(e, io.ErrUnexpectedEOF) {
+			return nil, e
+		}
 		n := int64(binary.LittleEndian.Uint32(h[:]))
 		if e == nil && n > maxRecord {
 			return nil, fmt.Errorf("oversized record at %d", off)
