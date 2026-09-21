@@ -50,3 +50,11 @@ The v1 contract made failure behavior, lifecycle semantics and executable verifi
 ## Open questions
 
 No production deployment or long-running operational validation was performed as part of this delivery.
+
+## 2026-09-21: Cooperative event cancellation
+
+The project-guide read-through found cancellation missing from the written v1 contract. Added per-event context and TaskContext, skipped canceled tasks before execution, and retained exactly one callback. Running tasks must cooperate with cancellation. The race suite passed with regression tests for pre-canceled synchronous/asynchronous work, active cancellation, and nil/stopped callback admission. Evidence: [commit f3bcdc091d](https://github.com/rushikeshg25/go-core-impl/commit/f3bcdc091df0aed0eb815231f83f6b6b753616b7) and [tests](main_test.go).
+
+## 2026-09-21: Maintainer project guide
+
+Added the six-file [project guide](docs/project-guide/README.md), tracing architecture, runtime flows, source structure, dependencies and decisions against the v1 code. Relative paths, source/heading anchors and Mermaid syntax were checked. The guide distinguishes observed behavior from inferred rationale and records remaining limitations.
