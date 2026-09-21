@@ -23,7 +23,7 @@ This repository brings together independent libraries, command-line tools, and s
 | Project | Implementation |
 | --- | --- |
 | [Concurrency Control](concurrency-control/) | A MySQL-backed Fiber API demonstrating optimistic concurrency control through version numbers or SHA-256 checksums. Rejects stale conflict tokens with HTTP `409`. |
-| [Event Loop](event-loop/) | Experimental task and callback queues with bounded goroutine concurrency for asynchronous work. Defines the loop API without an executable entry point. |
+| [Event Loop](event-loop/) | Bounded asynchronous tasks, serialized callbacks, draining shutdown, and a runnable demo; includes lifecycle and race tests. |
 | [Schema Change Benchmark](adding-null-vs-not-null-col-benchmarking/) | Compares MySQL column additions using `NULL` and `NOT NULL DEFAULT 0` across five iterations of 100,000 rows. Reports execution time and Go process memory statistics. |
 | [Thread Pool](thread-pool/) | Two worker-pool examples: a task-function pool and a jobs/results-channel implementation. Each runs as a separate program. |
 
@@ -133,6 +133,6 @@ For Kafka, running without arguments lists the available modes. For RAFT, follow
 
 ## Development
 
-Each project is maintained independently. There is no root Go module or repository-wide build command. Build and test within the selected module, using its documented entry point and required services. Bloom Filter is a library, and Event Loop currently has no executable entry point. The storage engine projects are libraries as well, each with its own test suite; Checksum and Corruption Detection also ships the `crcverify` command.
+Each project is maintained independently. There is no root Go module or repository-wide build command. Build and test within the selected module, using its documented entry point and required services. Bloom Filter is a library; Event Loop includes an executable demo. The storage engine projects are libraries as well, each with its own test suite; Checksum and Corruption Detection also ships the `crcverify` command.
 
 When adding or changing a project, update this catalog in the same change. Keep descriptions aligned with implemented behavior, record relevant setup requirements, and keep submodule paths and upstream URLs consistent with [.gitmodules](.gitmodules).
