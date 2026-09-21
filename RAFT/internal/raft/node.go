@@ -89,10 +89,18 @@ func (r *Raft) AppendEntries(a *AppendEntriesArgs, b *AppendEntriesReply) error 
 	if a.PrevLogIndex+len(a.Entries)+1 > maxEntries {
 		return errors.New("log capacity reached")
 	}
+	total := 0
+	for _, e := range r.log[:a.PrevLogIndex+1] {
+		total += len(e.Command)
+	}
 	prev := a.PrevLogTerm
 	for _, entry := range a.Entries {
 		if entry.Term < prev || entry.Term > a.Term || entry.Term <= 0 || len(entry.Command) > maxCommand {
 			return errors.New("invalid log entry")
+		}
+		total += len(entry.Command)
+		if total > maxStateBytes/2 {
+			return errors.New("log payload limit exceeded")
 		}
 		prev = entry.Term
 	}
@@ -186,7 +194,7 @@ func (r *Raft) ticker() {
 func (r *Raft) startElection() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.check() != nil {
+	if r.check() != nil || r.role == Leader {
 		return
 	}
 	r.currentTerm++

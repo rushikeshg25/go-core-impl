@@ -11,6 +11,7 @@ import (
 
 const maxCommand = 1 << 20
 const maxEntries = 10000
+const maxStateBytes = 64 << 20
 
 type diskState struct {
 	Version, ID, Term, Vote, Commit int
@@ -31,6 +32,9 @@ func NewPersistentRaft(id int, peers []string, send func(string, string, interfa
 	}
 	r := &Raft{id: id, peers: append([]string(nil), peers...), votedFor: -1, log: []LogEntry{{}}, sendRPC: send, path: path, stop: make(chan struct{}), heartbeat: 80 * time.Millisecond, election: 600 * time.Millisecond, inflight: make([]bool, len(peers))}
 	if path != "" {
+		if stat, e := os.Stat(path); e == nil && stat.Size() > maxStateBytes {
+			return nil, errors.New("persistent state exceeds size limit")
+		}
 		b, e := os.ReadFile(path)
 		if e == nil {
 			var s diskState
@@ -40,10 +44,15 @@ func NewPersistentRaft(id int, peers []string, send func(string, string, interfa
 			if s.Version != 1 || s.ID != id || !reflect.DeepEqual(s.Peers, peers) || s.Term < 0 || s.Vote < -1 || s.Vote >= len(peers) || len(s.Log) == 0 || len(s.Log) > maxEntries || s.Commit < 0 || s.Commit >= len(s.Log) || s.Log[0].Term != 0 {
 				return nil, errors.New("invalid persistent Raft state")
 			}
+			total := 0
 			prev := 0
 			for i, entry := range s.Log {
 				if entry.Term < prev || entry.Term > s.Term || len(entry.Command) > maxCommand || i > 0 && entry.Term == 0 {
 					return nil, errors.New("invalid persistent log")
+				}
+				total += len(entry.Command)
+				if total > maxStateBytes/2 {
+					return nil, errors.New("log payload limit exceeded")
 				}
 				prev = entry.Term
 			}
@@ -120,4 +129,12 @@ func cloneEntries(entries []LogEntry) []LogEntry {
 		out[i].Command = append([]byte(nil), e.Command...)
 	}
 	return out
+}
+
+func (r *Raft) payloadSize() int {
+	total := 0
+	for _, e := range r.log {
+		total += len(e.Command)
+	}
+	return total
 }

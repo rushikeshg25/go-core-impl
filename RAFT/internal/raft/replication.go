@@ -69,7 +69,7 @@ func (r *Raft) Propose(command []byte) (int, error) {
 	if r.role != Leader {
 		return 0, errors.New("not leader")
 	}
-	if len(command) > maxCommand || len(r.log) >= maxEntries {
+	if len(command) > maxCommand || len(r.log) >= maxEntries || r.payloadSize()+len(command) > maxStateBytes/2 {
 		return 0, errors.New("log capacity exceeded")
 	}
 	r.log = append(r.log, LogEntry{Term: r.currentTerm, Command: append([]byte(nil), command...)})
