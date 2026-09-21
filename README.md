@@ -13,7 +13,7 @@ This repository brings together independent libraries, command-line tools, and s
 | Project | Implementation |
 | --- | --- |
 | [Bloom Filter](bloomfilter/) | Probabilistic membership testing with seeded MurmurHash3 hashes and configurable storage size and hash count. Exposes `New`, `Add`, `Test`, and `Clear` as a library. |
-| [Durable Logs](durable-logs/) | Experimental file logging with Protocol Buffers, buffered writes, and segment rotation. Buffered-log retrieval remains a placeholder. |
+| [Durable Logs](durable-logs/) | Buffered protobuf logging with pending-message retrieval, numeric segment rotation, restart recovery, synchronized access and error-returning lifecycle APIs. |
 | [Merkle Trees](merkle-trees/) | Directory hashing and comparison using BLAKE3. Provides commands to calculate root hashes, display trees, and report added, deleted, or modified entries. |
 | [Mini Git](mini-git/) | A Cobra-based version-control CLI with repository initialization, staging, commits, status, history, branches, and checkout. |
 | [Queue](queue/) | A slice-backed integer FIFO queue with a caller-supplied mutex and a concurrent producer/consumer demo. |
