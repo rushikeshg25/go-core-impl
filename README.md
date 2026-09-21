@@ -6,6 +6,10 @@ This repository brings together independent libraries, command-line tools, and s
 
 [Projects](#projects) · [Git Submodules](#git-submodules) · [Getting Started](#getting-started) · [Development](#development)
 
+## V1 delivery
+
+[Fourteen independent v1 PRs](docs/v1-delivery.md) include executable acceptance checks, histories, and six-file project guides. This integration updates nine submodule pins; the five directory implementations arrive through their linked PRs. The catalog below describes the combined v1 result: merge the linked directory PRs before this integration, alongside the submodule PRs in the documented order. Exact branch heads and commit counts are recorded in [the delivery manifest](docs/v1-delivery.json).
+
 ## Projects
 
 ### Data Structures and Storage
@@ -13,7 +17,7 @@ This repository brings together independent libraries, command-line tools, and s
 | Project | Implementation |
 | --- | --- |
 | [Bloom Filter](bloomfilter/) | Probabilistic membership testing with seeded MurmurHash3 hashes and configurable storage size and hash count. Exposes `New`, `Add`, `Test`, and `Clear` as a library. |
-| [Durable Logs](durable-logs/) | Experimental file logging with Protocol Buffers, buffered writes, and segment rotation. Buffered-log retrieval remains a placeholder. |
+| [Durable Logs](durable-logs/) | Buffered Protocol Buffer logging with exact framing, count-based rotation, pending-log retrieval, restart recovery, and explicit sync/close errors. |
 | [Merkle Trees](merkle-trees/) | Directory hashing and comparison using BLAKE3. Provides commands to calculate root hashes, display trees, and report added, deleted, or modified entries. |
 | [Mini Git](mini-git/) | A Cobra-based version-control CLI with repository initialization, staging, commits, status, history, branches, and checkout. |
 | [Queue](queue/) | A slice-backed integer FIFO queue with a caller-supplied mutex and a concurrent producer/consumer demo. |
@@ -23,7 +27,7 @@ This repository brings together independent libraries, command-line tools, and s
 | Project | Implementation |
 | --- | --- |
 | [Concurrency Control](concurrency-control/) | A MySQL-backed Fiber API demonstrating optimistic concurrency control through version numbers or SHA-256 checksums. Rejects stale conflict tokens with HTTP `409`. |
-| [Event Loop](event-loop/) | Experimental task and callback queues with bounded goroutine concurrency for asynchronous work. Defines the loop API without an executable entry point. |
+| [Event Loop](event-loop/) | Runnable task/callback loop with bounded asynchronous execution, cooperative per-event cancellation, callback completion, and draining shutdown. |
 | [Schema Change Benchmark](adding-null-vs-not-null-col-benchmarking/) | Compares MySQL column additions using `NULL` and `NOT NULL DEFAULT 0` across five iterations of 100,000 rows. Reports execution time and Go process memory statistics. |
 | [Thread Pool](thread-pool/) | Two worker-pool examples: a task-function pool and a jobs/results-channel implementation. Each runs as a separate program. |
 
@@ -33,7 +37,7 @@ This repository brings together independent libraries, command-line tools, and s
 | --- | --- |
 | [Consistent Hashing](consistent-hashing/) | A SHA-256 hash ring with node addition, removal, key assignment, and a command-line visualization of node positions. |
 | [Kafka Consumer Groups](kafka-multiple-consumers-partitions/) | Partitioned producers, consumer groups with manual offset commits, and transactional production using Confluent's Kafka client. Includes conceptual walkthroughs of messaging patterns and operations. |
-| [RAFT](RAFT/) | Leader election, randomized timeouts, and heartbeats over Go's `net/rpc`. Log replication and persistent storage remain planned. See the [demo and roadmap](RAFT/README.md). |
+| [RAFT](RAFT/) | Persistent static-membership consensus with election, replicated logs, conflict repair, majority commit, ordered application checkpoints, and bounded TCP/RPC. See the [demo and roadmap](RAFT/README.md). |
 
 ### Storage Engine Series
 
@@ -41,7 +45,7 @@ These build up a storage engine one concept at a time, each in its own repositor
 
 | Project | Implementation |
 | --- | --- |
-| [Append-Only Storage](append-only-storage/) | Record framing, byte offsets, partial writes, and `fsync` behavior. Design plan only; no implementation yet. |
+| [Append-Only Storage](append-only-storage/) | Versioned record framing, positional reads and scans, incomplete-tail recovery, explicit sync, and read-only inspection. See its v1 contract and project guide. |
 | [Checksum and Corruption Detection](checksum-corruption-detection/) | A CRC32C record log with a read-only verifier and a `crcverify` command. Reports the offset and both checksums of a damaged record, and repairs only a final record that EOF cut short. |
 | [In-Memory Hash Index](in-memory-hash-index/) | An on-disk key-value store whose live keys resolve through a custom open-addressed hash table with linear probing, deleted-slot tombstones, and probe-distribution statistics. |
 | [Concurrent Readers, Single Writer](concurrent-readers-single-writer/) | The same engine with concurrent reads and serialized mutations, a documented lock ordering, and deterministic tests over operation publication schedules. |
@@ -52,10 +56,10 @@ These build up a storage engine one concept at a time, each in its own repositor
 
 | Project | Implementation |
 | --- | --- |
-| [HTTP Live Streaming](hls/) | A Go upload/transcoding server with persisted processing status, generated HLS playlists and a React/Video.js upload-and-play interface. |
+| [HTTP Live Streaming](hls/) | Isolated asynchronous uploads and FFmpeg-to-HLS conversion with persisted processing status and a connected React/TypeScript Video.js player. |
 | [Multithreaded TCP Server](multithreaded-tcp/) | A newline-delimited TCP broadcast server with a goroutine per connection, buffered message delivery, and signal-driven shutdown handling. |
 | [Real-time Leaderboard](realtime-leaderboard/) | A Redis sorted-set HTTP API for score updates, player ranks, and the top ten players. Includes tests and environment-based configuration. See the [setup and API reference](realtime-leaderboard/README.md). |
-| [WebSockets](websockets/) | A manual HTTP upgrade handshake with `Sec-WebSocket-Accept` calculation and a health endpoint. Connections close after the handshake; frame exchange is not implemented. |
+| [WebSockets](websockets/) | Manual RFC 6455 echo with validated upgrade, masked frames, fragmentation, text/binary messages, ping/pong, and close handling. |
 
 ## Git Submodules
 
@@ -106,7 +110,7 @@ Additional requirements depend on the project:
 | Schema Change Benchmark | MySQL with a `test` database. The benchmark creates and drops the `alter_benchmark` table. |
 | Kafka Consumer Groups | Kafka at `localhost:9092` for the messaging examples. |
 | Real-time Leaderboard | Redis. Connection settings are configurable through environment variables. |
-| HTTP Live Streaming | A JavaScript runtime and package manager for the Vite client, plus existing HLS playlists and segments for playback. |
+| HTTP Live Streaming | FFmpeg for server transcoding, plus a JavaScript runtime and package manager for the Vite client. |
 
 Several network demos use port `8080` by default. Run them separately or adjust their port configuration.
 
@@ -133,6 +137,6 @@ For Kafka, running without arguments lists the available modes. For RAFT, follow
 
 ## Development
 
-Each project is maintained independently. There is no root Go module or repository-wide build command. Build and test within the selected module, using its documented entry point and required services. Bloom Filter is a library, and Event Loop currently has no executable entry point. The storage engine projects are libraries as well, each with its own test suite; Checksum and Corruption Detection also ships the `crcverify` command.
+Each project is maintained independently. There is no root Go module or repository-wide build command. Build and test within the selected module, using its documented entry point and required services. Bloom Filter is a library; Event Loop ships a runnable task/callback demo. The storage engine projects are libraries as well, each with its own test suite; Checksum and Corruption Detection also ships the `crcverify` command.
 
 When adding or changing a project, update this catalog in the same change. Keep descriptions aligned with implemented behavior, record relevant setup requirements, and keep submodule paths and upstream URLs consistent with [.gitmodules](.gitmodules).
