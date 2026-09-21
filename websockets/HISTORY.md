@@ -50,3 +50,7 @@ The v1 contract made failure behavior, lifecycle semantics and executable verifi
 ## Open questions
 
 No production deployment or long-running operational validation was performed as part of this delivery.
+
+## 2026-09-21: Maintainer project guide
+
+Added the six-file [project guide](docs/project-guide/README.md), tracing architecture, runtime flows, source structure, dependencies and decisions against the v1 code. Relative paths, source/heading anchors and Mermaid syntax were checked. The guide distinguishes observed behavior from inferred rationale and records remaining limitations.
