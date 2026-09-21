@@ -1,77 +1,120 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 )
 
+// Event runs Task and then Callback. Async tasks use a bounded pool.
 type Event struct {
 	Task     func()
 	Callback func()
+	Async    bool
 	isAsync  bool
 }
-
 type EventLoop struct {
 	Events    chan Event
 	Callbacks chan Event
-	stop      chan bool
+	once      sync.Once
+	mu        sync.Mutex
+	stopped   bool
+	stop      chan struct{}
+	done      chan struct{}
+	wg        sync.WaitGroup
 }
 
 func NewEventLoop() *EventLoop {
-	return &EventLoop{
-		Events:    make(chan Event, 5),
-		Callbacks: make(chan Event, 5),
-		stop:      make(chan bool),
-	}
+	return &EventLoop{Events: make(chan Event, 5), Callbacks: make(chan Event, 5), stop: make(chan struct{}), done: make(chan struct{})}
 }
 
+// Start is idempotent and returns immediately. The wait group completes after StopEventLoop.
 func (el *EventLoop) Start() *sync.WaitGroup {
-	var wg sync.WaitGroup
-	pool := make(chan struct{}, 5) //For async tasks
-
-	wg.Add(1)
+	el.once.Do(func() { el.wg.Add(1); go el.run() })
+	return &el.wg
+}
+func invoke(f func()) {
+	if f != nil {
+		f()
+	}
+}
+func (el *EventLoop) run() {
+	defer el.wg.Done()
+	defer close(el.done)
+	completed := make(chan Event, 5)
+	active := 0
+	stopping := false
+	stop := el.stop
 	for {
-		defer wg.Done()
+		if stopping && active == 0 && len(el.Events) == 0 && len(el.Callbacks) == 0 {
+			return
+		}
+		events := el.Events
+		if active == 5 {
+			events = nil
+		}
 		select {
-		case e := <-el.Events:
-			if e.isAsync {
-				pool <- struct{}{}
-				go func() {
-					defer func() {
-						<-pool
-					}()
-					e.Task()
-
-					if e.Callback != nil {
-						AddCallback(
-							el,
-							&Event{
-								Task: e.Callback,
-							},
-						)
-					}
-				}()
+		case e := <-events:
+			if e.Async || e.isAsync {
+				active++
+				go func() { invoke(e.Task); completed <- e }()
 			} else {
-				e.Task()
+				invoke(e.Task)
+				invoke(e.Callback)
 			}
+		case e := <-completed:
+			active--
+			invoke(e.Callback)
 		case e := <-el.Callbacks:
-			e.Task()
-		case stop := <-el.stop:
-			if stop {
-				return
-			}
+			invoke(e.Task)
+			invoke(e.Callback)
+		case <-stop:
+			stopping = true
+			stop = nil
 		}
 	}
-	return &wg
 }
 
-func (el *EventLoop) AddEvent(event *Event) {
+// AddEvent returns false after shutdown; accepted events are drained on shutdown.
+func (el *EventLoop) AddEvent(event *Event) bool {
+	if event == nil {
+		return false
+	}
+	el.Start()
+	el.mu.Lock()
+	defer el.mu.Unlock()
+	if el.stopped {
+		return false
+	}
 	el.Events <- *event
+	return true
 }
 
+// StopEventLoop drains accepted work. Call from outside tasks and callbacks.
 func (el *EventLoop) StopEventLoop() {
-	el.stop <- true
+	el.Start()
+	el.mu.Lock()
+	if !el.stopped {
+		el.stopped = true
+		close(el.stop)
+	}
+	el.mu.Unlock()
+	<-el.done
 }
-
-func AddCallback(el *EventLoop, event *Event) {
+func AddCallback(el *EventLoop, event *Event) bool {
+	if event == nil {
+		return false
+	}
+	el.Start()
+	el.mu.Lock()
+	defer el.mu.Unlock()
+	if el.stopped {
+		return false
+	}
 	el.Callbacks <- *event
+	return true
+}
+func main() {
+	el := NewEventLoop()
+	el.AddEvent(&Event{Async: true, Task: func() { fmt.Println("task") }, Callback: func() { fmt.Println("done") }})
+	el.StopEventLoop()
 }
