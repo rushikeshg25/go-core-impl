@@ -1,6 +1,7 @@
 package raft
 
 import (
+	"errors"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -158,5 +159,38 @@ func TestSingleNodeAndPersistenceFailure(t *testing.T) {
 	var vote RequestVoteReply
 	if r.RequestVote(&RequestVoteArgs{Term: 10, CandidateId: 0}, &vote) == nil || vote.VoteGranted {
 		t.Fatal("poisoned node voted")
+	}
+}
+
+func TestOrderedApplicationCheckpoint(t *testing.T) {
+	r := NewRaft(0, []string{"0"}, func(string, string, interface{}, interface{}) bool { return false })
+	defer r.Stop()
+	r.startElection()
+	r.Propose([]byte("a"))
+	r.Propose([]byte("b"))
+	count := 0
+	failure := errors.New("application failed")
+	checkpoint, e := r.ApplyTo(0, func(entry AppliedEntry) error {
+		count++
+		var status StatusReply
+		if err := r.Status(&StatusArgs{}, &status); err != nil {
+			t.Fatal(err)
+		}
+		if string(entry.Command) == "b" {
+			return failure
+		}
+		return nil
+	})
+	if !errors.Is(e, failure) || count != 2 || checkpoint != 2 {
+		t.Fatal(checkpoint, count, e)
+	}
+	checkpoint, e = r.ApplyTo(checkpoint, func(entry AppliedEntry) error {
+		if string(entry.Command) != "b" {
+			t.Fatal("reapplied acknowledged entry")
+		}
+		return nil
+	})
+	if e != nil || checkpoint != 3 {
+		t.Fatal(checkpoint, e)
 	}
 }

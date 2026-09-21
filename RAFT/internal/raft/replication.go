@@ -119,3 +119,32 @@ func (r *Raft) Applied() []AppliedEntry {
 	}
 	return out
 }
+
+// ApplyTo applies a captured committed prefix in index order, outside the Raft
+// lock. The caller serializes calls and durably checkpoints the returned index
+// with its state machine. A failing callback leaves that command unacknowledged.
+func (r *Raft) ApplyTo(lastApplied int, apply func(AppliedEntry) error) (int, error) {
+	r.mu.Lock()
+	if e := r.check(); e != nil {
+		r.mu.Unlock()
+		return lastApplied, e
+	}
+	if lastApplied < 0 || lastApplied > r.commitIndex || apply == nil {
+		r.mu.Unlock()
+		return lastApplied, errors.New("invalid application checkpoint or callback")
+	}
+	commit := r.commitIndex
+	entries := cloneEntries(r.log[lastApplied+1 : commit+1])
+	r.mu.Unlock()
+	index := lastApplied
+	for _, entry := range entries {
+		next := index + 1
+		if !entry.Noop {
+			if e := apply(AppliedEntry{next, entry.Command}); e != nil {
+				return index, e
+			}
+		}
+		index = next
+	}
+	return index, nil
+}
