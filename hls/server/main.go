@@ -12,10 +12,12 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -27,6 +29,8 @@ type video struct {
 	Error  string `json:"error,omitempty"`
 }
 type service struct {
+	life      sync.Mutex
+	closed    bool
 	root      string
 	mu        sync.Mutex
 	videos    map[string]video
@@ -87,7 +91,7 @@ func (s *service) save(v video) error {
 	s.mu.Unlock()
 	return nil
 }
-func (s *service) Close() { s.cancel(); s.wg.Wait() }
+func (s *service) Close() { s.life.Lock(); s.closed = true; s.cancel(); s.life.Unlock(); s.wg.Wait() }
 func (s *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -144,6 +148,15 @@ func (s *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (s *service) upload(w http.ResponseWriter, r *http.Request) {
+	s.life.Lock()
+	if s.closed {
+		s.life.Unlock()
+		http.Error(w, "shutting down", 503)
+		return
+	}
+	s.wg.Add(1)
+	s.life.Unlock()
+	defer s.wg.Done()
 	select {
 	case <-s.ctx.Done():
 		http.Error(w, "shutting down", 503)
@@ -243,7 +256,7 @@ func (s *service) upload(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(video{ID: id, Name: filepath.Base(h.Filename), Status: "processing"})
 }
 func transcode(ctx context.Context, input, dir string) error {
-	cmd := exec.CommandContext(ctx, "ffmpeg", "-nostdin", "-y", "-protocol_whitelist", "file,pipe", "-i", input, "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-c:a", "aac", "-f", "hls", "-hls_time", "2", "-hls_playlist_type", "vod", "-hls_segment_filename", filepath.Join(dir, "segment%03d.ts"), filepath.Join(dir, "index.m3u8"))
+	cmd := exec.CommandContext(ctx, "ffmpeg", "-nostdin", "-y", "-protocol_whitelist", "file,pipe", "-format_whitelist", "mov,matroska,webm,avi,mpegts", "-i", input, "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-c:a", "aac", "-f", "hls", "-hls_time", "2", "-hls_playlist_type", "vod", "-hls_segment_filename", filepath.Join(dir, "segment%03d.ts"), filepath.Join(dir, "index.m3u8"))
 	if b, e := cmd.CombinedOutput(); e != nil {
 		return fmt.Errorf("ffmpeg: %w: %.2000s", e, b)
 	}
@@ -254,6 +267,25 @@ func main() {
 	if e != nil {
 		log.Fatal(e)
 	}
-	defer s.Close()
-	log.Fatal((&http.Server{Addr: ":8080", Handler: s, ReadHeaderTimeout: 5 * time.Second}).ListenAndServe())
+	server := &http.Server{Addr: ":8080", Handler: s, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 2 * time.Minute, IdleTimeout: 60 * time.Second}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	done := make(chan struct{})
+	go func() {
+		<-ctx.Done()
+		s.cancel()
+		timeout, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if server.Shutdown(timeout) != nil {
+			server.Close()
+		}
+		close(done)
+	}()
+	if e = server.ListenAndServe(); e != nil && !errors.Is(e, http.ErrServerClosed) {
+		stop()
+		log.Print(e)
+	}
+	stop()
+	<-done
+	s.Close()
 }
