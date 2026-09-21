@@ -6,10 +6,6 @@ This repository brings together independent libraries, command-line tools, and s
 
 [Projects](#projects) · [Git Submodules](#git-submodules) · [Getting Started](#getting-started) · [Development](#development)
 
-## V1 delivery
-
-[Fourteen independent v1 PRs](docs/v1-delivery.md) include executable acceptance checks, histories, and six-file project guides. This integration updates nine submodule pins; the five directory implementations arrive through their linked PRs. The catalog below describes the combined v1 result: merge the linked directory PRs before this integration, alongside the submodule PRs in the documented order. Exact branch heads and commit counts are recorded in [the delivery manifest](docs/v1-delivery.json).
-
 ## Projects
 
 ### Data Structures and Storage
