@@ -1,60 +1,90 @@
 package rpc
 
 import (
-	"log"
+	"errors"
+	"github.com/rushikeshg25/raft/internal/raft"
 	"net"
 	"net/rpc"
-
-	"github.com/rushikeshg25/raft/internal/raft"
+	"sync"
+	"time"
 )
 
 type Server struct {
-	node *raft.Raft
+	node     *raft.Raft
+	mu       sync.Mutex
+	listener net.Listener
+	conns    map[net.Conn]bool
+	stopped  bool
+	wg       sync.WaitGroup
 }
 
-func NewServer(node *raft.Raft) *Server {
-	return &Server{node: node}
-}
-
+func NewServer(node *raft.Raft) *Server { return &Server{node: node, conns: map[net.Conn]bool{}} }
 func (s *Server) Start(address string) error {
-	rpcServer := rpc.NewServer()
-	err := rpcServer.RegisterName("Raft", s.node)
-	if err != nil {
-		return err
+	l, e := net.Listen("tcp", address)
+	if e != nil {
+		return e
 	}
-
-	listener, err := net.Listen("tcp", address)
-	if err != nil {
-		return err
+	if e = s.Serve(l); e != nil {
+		l.Close()
 	}
-
-	log.Printf("[Server] Listening on %s", address)
+	return e
+}
+func (s *Server) Serve(l net.Listener) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.stopped || s.listener != nil {
+		return errors.New("server already started or stopped")
+	}
+	server := rpc.NewServer()
+	if e := server.RegisterName("Raft", s.node); e != nil {
+		return e
+	}
+	s.listener = l
+	s.wg.Add(1)
 	go func() {
+		defer s.wg.Done()
 		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				log.Printf("[Server] Accept error: %v", err)
-				continue
+			c, e := l.Accept()
+			if e != nil {
+				return
 			}
-			go rpcServer.ServeConn(conn)
+			s.mu.Lock()
+			if s.stopped {
+				s.mu.Unlock()
+				c.Close()
+				return
+			}
+			s.conns[c] = true
+			s.wg.Add(1)
+			s.mu.Unlock()
+			go func() {
+				defer s.wg.Done()
+				defer func() { c.Close(); s.mu.Lock(); delete(s.conns, c); s.mu.Unlock() }()
+				server.ServeConn(c)
+			}()
 		}
 	}()
-
 	return nil
 }
-
-func Call(address string, method string, args interface{}, reply interface{}) bool {
-	client, err := rpc.Dial("tcp", address)
-	if err != nil {
+func (s *Server) Stop() {
+	s.mu.Lock()
+	s.stopped = true
+	if s.listener != nil {
+		s.listener.Close()
+	}
+	for c := range s.conns {
+		c.Close()
+	}
+	s.mu.Unlock()
+	s.wg.Wait()
+}
+func Call(address, method string, args, reply interface{}) bool {
+	conn, e := net.DialTimeout("tcp", address, 200*time.Millisecond)
+	if e != nil {
 		return false
 	}
+	conn.SetDeadline(time.Now().Add(300 * time.Millisecond))
+	client := rpc.NewClient(conn)
 	defer client.Close()
-
-	err = client.Call(method, args, reply)
-	if err != nil {
-		log.Printf("[RPC] Call error %s: %v", method, err)
-		return false
-	}
-
-	return true
+	return client.Call(method, args, reply) == nil
 }

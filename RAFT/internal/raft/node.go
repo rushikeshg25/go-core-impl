@@ -1,193 +1,283 @@
 package raft
 
 import (
-	"log"
+	"bytes"
+	"errors"
 	"math/rand"
 	"time"
 )
 
-func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) error {
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-
-	log.Printf("[Node %d] Received RequestVote from %d (Term: %d)", rf.id, args.CandidateId, args.Term)
-
-	if args.Term < rf.currentTerm {
-		reply.Term = rf.currentTerm
-		reply.VoteGranted = false
-		return nil
+func (r *Raft) resetDeadline() {
+	r.deadline = time.Now().Add(r.election + time.Duration(rand.Int63n(int64(r.election/2))))
+}
+func (r *Raft) stepDown(term int) error {
+	r.role = Follower
+	if term > r.currentTerm {
+		r.currentTerm = term
+		r.votedFor = -1
+		return r.persist()
 	}
-
-	if args.Term > rf.currentTerm {
-		rf.currentTerm = args.Term
-		rf.role = Follower
-		rf.votedFor = -1
-	}
-
-	reply.Term = rf.currentTerm
-
-	canVote := rf.votedFor == -1 || rf.votedFor == args.CandidateId
-
-	if canVote {
-		rf.votedFor = args.CandidateId
-		rf.lastContact = time.Now()
-		reply.VoteGranted = true
-		log.Printf("[Node %d] Voted for %d in Term %d", rf.id, args.CandidateId, rf.currentTerm)
-	} else {
-		reply.VoteGranted = false
-	}
-
 	return nil
 }
-
-func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) error {
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-
-	if args.Term < rf.currentTerm {
-		reply.Term = rf.currentTerm
-		reply.Success = false
+func (r *Raft) RequestVote(a *RequestVoteArgs, b *RequestVoteReply) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if e := r.check(); e != nil {
+		return e
+	}
+	if a.CandidateId < 0 || a.CandidateId >= len(r.peers) || a.Term < 0 || a.LastLogIndex < 0 || a.LastLogTerm < 0 {
+		return errors.New("invalid vote request")
+	}
+	if a.Term > r.currentTerm {
+		if e := r.stepDown(a.Term); e != nil {
+			return e
+		}
+	}
+	b.Term = r.currentTerm
+	b.VoteGranted = false
+	if a.Term < r.currentTerm {
 		return nil
 	}
-
-	rf.lastContact = time.Now()
-
-	if args.Term > rf.currentTerm {
-		rf.currentTerm = args.Term
-		rf.role = Follower
-		rf.votedFor = -1
-	} else if rf.role == Candidate {
-		rf.role = Follower
+	last := len(r.log) - 1
+	upToDate := a.LastLogTerm > r.log[last].Term || a.LastLogTerm == r.log[last].Term && a.LastLogIndex >= last
+	if upToDate && (r.votedFor == -1 || r.votedFor == a.CandidateId) {
+		r.votedFor = a.CandidateId
+		if e := r.persist(); e != nil {
+			return e
+		}
+		r.resetDeadline()
+		b.VoteGranted = true
 	}
-
-	reply.Term = rf.currentTerm
-	reply.Success = true
-
 	return nil
 }
-
-func (rf *Raft) Start() {
-	rf.mu.Lock()
-	rf.lastContact = time.Now()
-	rf.mu.Unlock()
-	go rf.ticker()
+func (r *Raft) AppendEntries(a *AppendEntriesArgs, b *AppendEntriesReply) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if e := r.check(); e != nil {
+		return e
+	}
+	if a.LeaderId < 0 || a.LeaderId >= len(r.peers) || a.PrevLogIndex < 0 || a.PrevLogTerm < 0 || a.LeaderCommit < 0 || a.Term < 0 || len(a.Entries) > maxEntries {
+		return errors.New("invalid append request")
+	}
+	b.Success = false
+	if a.Term > r.currentTerm {
+		if e := r.stepDown(a.Term); e != nil {
+			return e
+		}
+	}
+	b.Term = r.currentTerm
+	b.NextIndex = len(r.log)
+	if a.Term < r.currentTerm {
+		return nil
+	}
+	r.role = Follower
+	r.resetDeadline()
+	if a.PrevLogIndex >= len(r.log) {
+		return nil
+	}
+	if r.log[a.PrevLogIndex].Term != a.PrevLogTerm {
+		i := a.PrevLogIndex
+		for i > 0 && r.log[i-1].Term == r.log[a.PrevLogIndex].Term {
+			i--
+		}
+		b.NextIndex = i
+		if b.NextIndex < 1 {
+			b.NextIndex = 1
+		}
+		return nil
+	}
+	if a.PrevLogIndex+len(a.Entries)+1 > maxEntries {
+		return errors.New("log capacity reached")
+	}
+	total := 0
+	for _, e := range r.log[:a.PrevLogIndex+1] {
+		total += len(e.Command)
+	}
+	prev := a.PrevLogTerm
+	for _, entry := range a.Entries {
+		if entry.Term < prev || entry.Term > a.Term || entry.Term <= 0 || len(entry.Command) > maxCommand {
+			return errors.New("invalid log entry")
+		}
+		total += len(entry.Command)
+		if total > maxStateBytes/2 {
+			return errors.New("log payload limit exceeded")
+		}
+		prev = entry.Term
+	}
+	changed := false
+	for i, entry := range a.Entries {
+		index := a.PrevLogIndex + 1 + i
+		if index < len(r.log) {
+			if r.log[index].Term == entry.Term {
+				if !bytes.Equal(r.log[index].Command, entry.Command) || r.log[index].Noop != entry.Noop {
+					return errors.New("conflicting content in same term")
+				}
+				continue
+			}
+			if index <= r.commitIndex {
+				return errors.New("cannot replace committed entry")
+			}
+			r.log = r.log[:index]
+		}
+		r.log = append(r.log, cloneEntries(a.Entries[i:])...)
+		changed = true
+		break
+	}
+	matched := a.PrevLogIndex + len(a.Entries)
+	commit := a.LeaderCommit
+	if commit > matched {
+		commit = matched
+	}
+	if commit > r.commitIndex {
+		r.commitIndex = commit
+		changed = true
+	}
+	if changed {
+		if e := r.persist(); e != nil {
+			return e
+		}
+	}
+	b.Success = true
+	b.NextIndex = matched + 1
+	return nil
 }
-
-func (rf *Raft) ticker() {
+func (r *Raft) Start() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.started || r.stopped {
+		return
+	}
+	r.started = true
+	r.resetDeadline()
+	r.wg.Add(1)
+	go r.ticker()
+}
+func (r *Raft) Stop() {
+	r.mu.Lock()
+	if !r.stopped {
+		r.stopped = true
+		close(r.stop)
+	}
+	r.mu.Unlock()
+	r.wg.Wait()
+}
+func (r *Raft) ticker() {
+	defer r.wg.Done()
+	ticker := time.NewTicker(20 * time.Millisecond)
+	defer ticker.Stop()
 	for {
-		rf.mu.Lock()
-		role := rf.role
-		lastContact := rf.lastContact
-		rf.mu.Unlock()
-
-		switch role {
-		case Follower, Candidate:
-			timeout := rf.randomElectionTimeout()
-			if time.Since(lastContact) > timeout {
-				rf.startElection()
+		select {
+		case <-r.stop:
+			return
+		case <-ticker.C:
+			r.mu.Lock()
+			if r.check() != nil {
+				r.mu.Unlock()
+				continue
 			}
-			time.Sleep(20 * time.Millisecond)
-		case Leader:
-			rf.sendHeartbeats()
-			time.Sleep(rf.heartbeat)
+			leader := r.role == Leader
+			elect := !leader && time.Now().After(r.deadline)
+			send := leader && time.Since(r.lastHeartbeat) >= r.heartbeat
+			if send {
+				r.lastHeartbeat = time.Now()
+			}
+			r.mu.Unlock()
+			if elect {
+				r.startElection()
+			}
+			if send {
+				r.replicate()
+			}
 		}
 	}
 }
-
-func (rf *Raft) randomElectionTimeout() time.Duration {
-	r := rand.Intn(150)
-	return rf.election + time.Duration(r)*time.Millisecond
-}
-
-func (rf *Raft) startElection() {
-	rf.mu.Lock()
-	rf.role = Candidate
-	rf.currentTerm++
-	rf.votedFor = rf.id
-	rf.lastContact = time.Now()
-	term := rf.currentTerm
-	peers := rf.peers
-	id := rf.id
-	rf.mu.Unlock()
-
-	log.Printf("[Node %d] Starting election for Term %d", rf.id, term)
-
+func (r *Raft) startElection() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.check() != nil || r.role == Leader {
+		return
+	}
+	r.currentTerm++
+	r.votedFor = r.id
+	r.role = Candidate
+	r.resetDeadline()
+	if r.persist() != nil {
+		return
+	}
+	term := r.currentTerm
+	last := len(r.log) - 1
+	args := RequestVoteArgs{Term: term, CandidateId: r.id, LastLogIndex: last, LastLogTerm: r.log[last].Term}
 	votes := 1
-	for i, addr := range peers {
-		if i == id {
+	if votes > len(r.peers)/2 {
+		r.becomeLeader()
+		return
+	}
+	for i, address := range r.peers {
+		if i == r.id {
 			continue
 		}
-
-		go func(peerAddr string) {
-			args := RequestVoteArgs{
-				Term:        term,
-				CandidateId: id,
-			}
+		r.wg.Add(1)
+		go func(address string) {
+			defer r.wg.Done()
 			var reply RequestVoteReply
-			if rf.sendRPC(peerAddr, "Raft.RequestVote", &args, &reply) {
-				rf.mu.Lock()
-				defer rf.mu.Unlock()
-
-				if rf.role != Candidate || rf.currentTerm != term {
-					return
-				}
-
-				if reply.Term > rf.currentTerm {
-					rf.currentTerm = reply.Term
-					rf.role = Follower
-					rf.votedFor = -1
-					return
-				}
-
-				if reply.VoteGranted {
-					votes++
-					if votes > len(peers)/2 {
-						log.Printf("[Node %d] Became LEADER for Term %d", rf.id, rf.currentTerm)
-						rf.role = Leader
-						rf.nextIndex = make([]int, len(peers))
-						rf.matchIndex = make([]int, len(peers))
-						for i := range rf.nextIndex {
-							rf.nextIndex[i] = len(rf.log)
-						}
-					}
+			if !r.sendRPC(address, "Raft.RequestVote", &args, &reply) {
+				return
+			}
+			r.mu.Lock()
+			defer r.mu.Unlock()
+			if r.check() != nil {
+				return
+			}
+			if reply.Term > r.currentTerm {
+				r.stepDown(reply.Term)
+				return
+			}
+			if r.role != Candidate || r.currentTerm != term {
+				return
+			}
+			if reply.VoteGranted {
+				votes++
+				if votes > len(r.peers)/2 {
+					r.becomeLeader()
 				}
 			}
-		}(addr)
+		}(address)
 	}
 }
-
-func (rf *Raft) sendHeartbeats() {
-	rf.mu.Lock()
-	term := rf.currentTerm
-	peers := rf.peers
-	id := rf.id
-	rf.mu.Unlock()
-
-	for i, addr := range peers {
-		if i == id {
+func (r *Raft) becomeLeader() {
+	if len(r.log) >= maxEntries {
+		r.err = errors.New("log capacity reached")
+		return
+	}
+	r.role = Leader
+	r.log = append(r.log, LogEntry{Term: r.currentTerm, Noop: true})
+	if r.persist() != nil {
+		return
+	}
+	r.nextIndex = make([]int, len(r.peers))
+	r.matchIndex = make([]int, len(r.peers))
+	for i := range r.nextIndex {
+		r.nextIndex[i] = len(r.log)
+	}
+	r.matchIndex[r.id] = len(r.log) - 1
+	r.advanceCommit()
+	r.lastHeartbeat = time.Time{}
+}
+func (r *Raft) advanceCommit() {
+	for n := len(r.log) - 1; n > r.commitIndex; n-- {
+		if r.log[n].Term != r.currentTerm {
 			continue
 		}
-
-		go func(peerAddr string) {
-			args := AppendEntriesArgs{
-				Term:     term,
-				LeaderId: id,
+		votes := 0
+		for _, matched := range r.matchIndex {
+			if matched >= n {
+				votes++
 			}
-			var reply AppendEntriesReply
-			if rf.sendRPC(peerAddr, "Raft.AppendEntries", &args, &reply) {
-				rf.mu.Lock()
-				defer rf.mu.Unlock()
-
-				if rf.role != Leader || rf.currentTerm != term {
-					return
-				}
-
-				if reply.Term > rf.currentTerm {
-					rf.currentTerm = reply.Term
-					rf.role = Follower
-					rf.votedFor = -1
-				}
-			}
-		}(addr)
+		}
+		if votes > len(r.peers)/2 {
+			r.commitIndex = n
+			r.persist()
+			return
+		}
 	}
 }
