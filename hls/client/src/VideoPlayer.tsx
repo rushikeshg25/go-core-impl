@@ -1,41 +1,14 @@
 import { useEffect, useRef } from "react";
 import videojs from "video.js";
 import "video.js/dist/video-js.css";
-
-const VideoPlayer: React.FC = () => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  const playerRef = useRef(null);
-
+export default function VideoPlayer({ src }: { src: string }) {
+  const container = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!videoRef.current) return;
-    //@ts-ignore
-    playerRef.current = videojs(videoRef.current, {
-      controls: true,
-      autoplay: false,
-      preload: "auto",
-      fluid: true, // Makes the player responsive
-    });
-
-    return () => {
-      if (playerRef.current) {
-        //@ts-ignore
-        playerRef.current.dispose();
-      }
-    };
-  }, []);
-
-  return (
-    <div data-vjs-player>
-      <video ref={videoRef} className="video-js vjs-default-skin">
-        <source
-          src="http://localhost:8080/hls/output.m3u8"
-          type="application/x-mpegURL"
-        />
-        Your browser does not support the video tag.
-      </video>
-    </div>
-  );
-};
-
-export default VideoPlayer;
+    if (!container.current) return;
+    const element = document.createElement("video-js");
+    container.current.appendChild(element);
+    const player = videojs(element, { controls: true, fluid: true, preload: "metadata", sources: [{ src, type: "application/x-mpegURL" }] });
+    return () => { player.dispose(); };
+  }, [src]);
+  return <div data-vjs-player ref={container} />;
+}
