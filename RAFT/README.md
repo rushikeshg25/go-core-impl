@@ -24,9 +24,9 @@ Submission returns a durably appended index, not a commit acknowledgement. A maj
 
 Candidates must have an up-to-date log. Term/vote/log state is atomically replaced and fsynced, including the directory, before successful acknowledgements. A persistence error stops subsequent protocol operations. Leaders append a no-op for their term and advance commit only when a majority stores a current-term entry. Followers reject conflicting committed entries and repair uncommitted suffixes. Committed indexes are persisted so restart exposes the committed prefix.
 
-`Propose([]byte)` copies and appends on the leader. `Applied()` returns an owned ordered snapshot of committed application commands, omitting leadership no-ops. `ApplyTo(lastApplied, callback)` applies a captured committed prefix in order outside the Raft lock and returns the last successfully applied index; callback failure leaves that command unacknowledged. The caller serializes application and durably checkpoints the index with its state machine. This interface does not promise exactly-once external side effects.
+`Propose([]byte)` copies and appends on the leader. `Applied()` returns an owned ordered snapshot of committed application commands, omitting leadership no-ops; it returns nil after stop or persistence failure (use `ApplyTo` for an explicit health error). `ApplyTo(lastApplied, callback)` applies a captured committed prefix in order outside the Raft lock and returns the last successfully applied index; callback failure leaves that command unacknowledged. The caller serializes application and durably checkpoints the index with its state machine. This interface does not promise exactly-once external side effects.
 
-`Start` and `Stop` are idempotent. RPC dialing/calls are bounded; server shutdown closes active connections. The legacy `NewRaft` constructor is in-memory only; the demo uses `NewPersistentRaft`.
+`Raft.Start` and `Raft.Stop` are idempotent. RPC dialing/calls are bounded; server shutdown closes active connections. The legacy `NewRaft` constructor is in-memory only; the demo uses `NewPersistentRaft`.
 
 ## Boundaries
 

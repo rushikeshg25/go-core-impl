@@ -194,3 +194,30 @@ func TestOrderedApplicationCheckpoint(t *testing.T) {
 		t.Fatal(checkpoint, e)
 	}
 }
+
+func TestFailedCommitPersistenceHidesApplicationSnapshot(t *testing.T) {
+	r, err := NewPersistentRaft(0, []string{"0", "1", "2"}, func(string, string, interface{}, interface{}) bool { return false }, filepath.Join(t.TempDir(), "state"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Stop()
+	r.currentTerm = 1
+	r.becomeLeader()
+	index, err := r.Propose([]byte("pending"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.path = t.TempDir() // Atomic rename onto a directory must fail.
+	r.matchIndex[1] = index
+	r.advanceCommit()
+	if r.err == nil {
+		t.Fatal("expected commit persistence failure")
+	}
+	if got := r.Applied(); len(got) != 0 {
+		t.Fatalf("failed node exposed commands: %v", got)
+	}
+	called := false
+	if _, err := r.ApplyTo(0, func(AppliedEntry) error { called = true; return nil }); err == nil || called {
+		t.Fatal("failed node applied commands")
+	}
+}

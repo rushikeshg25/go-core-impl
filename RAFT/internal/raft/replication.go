@@ -108,9 +108,13 @@ func (r *Raft) Status(a *StatusArgs, b *StatusReply) error {
 
 // Applied is an ordered snapshot of committed application commands. Consumers
 // retain their own applied index; no-op leadership entries are omitted.
+// A stopped or failed node returns nil; use ApplyTo to receive the health error.
 func (r *Raft) Applied() []AppliedEntry {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.check() != nil {
+		return nil
+	}
 	out := []AppliedEntry{}
 	for i := 1; i <= r.commitIndex; i++ {
 		if !r.log[i].Noop {
