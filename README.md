@@ -52,7 +52,7 @@ These build up a storage engine one concept at a time, each in its own repositor
 
 | Project | Implementation |
 | --- | --- |
-| [HTTP Live Streaming](hls/) | A Go server for uploads and existing HLS playlists and segments, with a React/TypeScript player using Video.js. Upload transcoding and playlist generation are not implemented. |
+| [HTTP Live Streaming](hls/) | A Go upload/transcoding server with persisted processing status, generated HLS playlists and a React/Video.js upload-and-play interface. |
 | [Multithreaded TCP Server](multithreaded-tcp/) | A newline-delimited TCP broadcast server with a goroutine per connection, buffered message delivery, and signal-driven shutdown handling. |
 | [Real-time Leaderboard](realtime-leaderboard/) | A Redis sorted-set HTTP API for score updates, player ranks, and the top ten players. Includes tests and environment-based configuration. See the [setup and API reference](realtime-leaderboard/README.md). |
 | [WebSockets](websockets/) | A manual HTTP upgrade handshake with `Sec-WebSocket-Accept` calculation and a health endpoint. Connections close after the handshake; frame exchange is not implemented. |
