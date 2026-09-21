@@ -33,7 +33,7 @@ This repository brings together independent libraries, command-line tools, and s
 | --- | --- |
 | [Consistent Hashing](consistent-hashing/) | A SHA-256 hash ring with node addition, removal, key assignment, and a command-line visualization of node positions. |
 | [Kafka Consumer Groups](kafka-multiple-consumers-partitions/) | Partitioned producers, consumer groups with manual offset commits, and transactional production using Confluent's Kafka client. Includes conceptual walkthroughs of messaging patterns and operations. |
-| [RAFT](RAFT/) | Leader election, randomized timeouts, and heartbeats over Go's `net/rpc`. Log replication and persistent storage remain planned. See the [demo and roadmap](RAFT/README.md). |
+| [RAFT](RAFT/) | Static-membership Raft with durable elections/logs, replicated majority commit, conflict repair and ordered application checkpoints over bounded TCP/RPC. See the [demo and roadmap](RAFT/README.md). |
 
 ### Storage Engine Series
 

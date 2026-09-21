@@ -1,69 +1,35 @@
-# RAFT Consensus Algorithm in Go
+# Persistent Raft v1
 
-A robust, educational implementation of the RAFT consensus algorithm from scratch in Go. This project aims to demonstrate the core principles of distributed consensus (Leader Election, Log Replication, and Safety) as described in the original whitepaper.
+An educational static-membership Raft implementation with election, durable votes/logs, AppendEntries consistency and conflict repair, majority commit and ordered application checkpoints.
 
-## Overview
+Start three terminals from this directory:
 
-RAFT is a consensus algorithm designed for manageability and understandability. It is equivalent to Paxos in fault-tolerance and performance but is structured to be much more intuitive. This implementation provides a functional core that can be used to build distributed, replicated state machines.
-
-### Key Features
-
-- **Leader Election**: Randomized election timeouts to ensure cluster stability.
-- **RPC Layer**: Efficient communication using Go's `net/rpc`.
-- **State Machine**: Clean separation of roles (Follower, Candidate, Leader).
-- **Demo CLI**: Easily spin up a local cluster to observe RAFT in action.
-
-## Architecture
-
-The project is structured following clean architecture principles:
-
-- `cmd/raft-demo`: Entry point for running a local cluster node.
-- `internal/raft`: Core RAFT logic including states, transitions, and election logic.
-- `internal/rpc`: Communication abstraction to handle inter-node calls.
-- `internal/storage`: (Planned) Persistence layer for log entries and stable state.
-
-### Node State Machine
-
-Nodes transition between three states:
-1.  **Follower**: The default state. Responds to RPCs from candidates and leaders.
-2.  **Candidate**: Becomes active when an election timeout occurs. Votes for itself and requests votes from others.
-3.  **Leader**: Established after receiving a majority of votes. Managed heartbeats and client requests.
-
-```mermaid
-stateDiagram-v2
-    [*] --> Follower
-    Follower --> Candidate: Times out, starts election
-    Candidate --> Candidate: Times out, new election
-    Candidate --> Leader: Receives votes from majority
-    Candidate --> Follower: Discovers current leader or new term
-    Leader --> Follower: Discovers server with higher term
+```sh
+go run ./cmd/raft-demo -id 0
+go run ./cmd/raft-demo -id 1
+go run ./cmd/raft-demo -id 2
 ```
 
-### Running the Demo
+The default ordered cluster is localhost:8000,8001,8002. Nodes store state separately under `data/node-<id>/state.json`. Use `-cluster` and `-state` to configure addresses and paths; the persisted identity/peer list must match on restart.
 
-To run a 3-node cluster locally, open three terminals and run the following commands:
-
-**Terminal 1 (Node 0):**
-```bash
-go run cmd/raft-demo/main.go -id 0 -cluster localhost:8000,localhost:8001,localhost:8002
+```sh
+go run ./cmd/raft-demo -status localhost:8000
+# role 2 is leader; submit to whichever node currently leads:
+go run ./cmd/raft-demo -submit localhost:8000 -command hello
 ```
 
-**Terminal 2 (Node 1):**
-```bash
-go run cmd/raft-demo/main.go -id 1 -cluster localhost:8000,localhost:8001,localhost:8002
-```
+Submission returns a durably appended index, not a commit acknowledgement. A majority must replicate it before application. A timed-out RPC has an unknown outcome; v1 has no client request deduplication.
 
-**Terminal 3 (Node 2):**
-```bash
-go run cmd/raft-demo/main.go -id 2 -cluster localhost:8000,localhost:8001,localhost:8002
-```
+## Safety and application contract
 
-## Todo
+Candidates must have an up-to-date log. Term/vote/log state is atomically replaced and fsynced, including the directory, before successful acknowledgements. A persistence error stops subsequent protocol operations. Leaders append a no-op for their term and advance commit only when a majority stores a current-term entry. Followers reject conflicting committed entries and repair uncommitted suffixes. Committed indexes are persisted so restart exposes the committed prefix.
 
-- [x] Basic RPC Layer
-- [x] Leader Election with Randomized Timeouts
-- [ ] Log Replication (AppendEntries consistency checks)
-- [ ] Persistent Storage for Stable State
-- [ ] Log Compaction (Snapshots)
-- [ ] Dynamic Membership Changes
+`Propose([]byte)` copies and appends on the leader. `Applied()` returns an owned ordered snapshot of committed application commands, omitting leadership no-ops. `ApplyTo(lastApplied, callback)` applies a captured committed prefix in order outside the Raft lock and returns the last successfully applied index; callback failure leaves that command unacknowledged. The caller serializes application and durably checkpoints the index with its state machine. This interface does not promise exactly-once external side effects.
 
+`Start` and `Stop` are idempotent. RPC dialing/calls are bounded; server shutdown closes active connections. The legacy `NewRaft` constructor is in-memory only; the demo uses `NewPersistentRaft`.
+
+## Boundaries
+
+V1 assumes trusted fixed peers and exclusive ownership of each state file. It has no TLS/authentication, membership changes, snapshots, linearizable reads or production deployment guarantee. State is rewritten as an atomic JSON snapshot on changes; limits are 10,000 log entries including the sentinel, 1 MiB per command and 32 MiB total command payload. Log compaction is deferred; reaching a limit rejects new work. Existing election-only state had no on-disk format to migrate. Creation of a new state directory does not fsync that directory's own parent.
+
+Run `go test -race ./...`. Tests cover minority isolation, leader replacement, conflicting suffix repair, durable votes, stale-candidate rejection, restart, persistence failures, application callback retry and a real three-node TCP/RPC cluster. These are bounded acceptance tests, not a proof of consensus correctness under every failure schedule.
