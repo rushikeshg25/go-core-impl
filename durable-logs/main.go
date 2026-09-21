@@ -2,12 +2,21 @@ package main
 
 import (
 	"durablelogs/durablelogs"
+	"log"
 )
 
 func main() {
-	dl := durablelogs.NewDLServer("./logs", 5)
-	for i := 0; i < 10; i++ {
-		dl.Log("hello")
+	d, e := durablelogs.Open("./logs", 5)
+	if e != nil {
+		log.Fatal(e)
 	}
-	dl.Flush()
+	for i := 0; i < 10; i++ {
+		if e = d.Log("hello"); e != nil {
+			d.Close()
+			log.Fatal(e)
+		}
+	}
+	if e = d.Close(); e != nil {
+		log.Fatal(e)
+	}
 }
