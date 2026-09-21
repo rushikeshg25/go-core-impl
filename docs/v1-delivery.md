@@ -4,7 +4,7 @@ This integration links fourteen independent v1 project PRs. Nine are separate re
 
 ## Review and merge order
 
-Review each project contract, README, HISTORY.md and docs/project-guide/. Each project has its own branch and 5–10 commits. Merge the submodule PRs before this pin PR, preserving their commit heads with a merge commit. If a project is squash-merged or rebased, refresh its pin to the resulting commit before merging this integration. The five directory PRs can be reviewed independently; this integration does not include their source changes.
+Review each project contract, README, HISTORY.md and docs/project-guide/. Each project has its own branch and 5–10 commits. Merge the submodule PRs before this pin PR, preserving their commit heads with a merge commit. If a project is squash-merged or rebased, refresh its pin to the resulting commit before merging this integration. The five directory PRs can be reviewed independently; merge them before this integration so the updated catalog matches the source. This integration does not include their source changes.
 
 ## Project PRs
 

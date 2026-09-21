@@ -1,0 +1,131 @@
+{
+  "date": "2026-09-21",
+  "projects": [
+    {
+      "name": "append-only-storage",
+      "url": "https://github.com/rushikeshg25/append-only-storage/pull/1",
+      "branch": "codex/append-only-storage-v1",
+      "sha": "3428c4b48ad68e7752970b4cacfb48289953a440",
+      "commits": 9,
+      "kind": "submodule",
+      "path": "append-only-storage"
+    },
+    {
+      "name": "loadbalancer",
+      "url": "https://github.com/rushikeshg25/loadbalancer/pull/2",
+      "branch": "codex/loadbalancer-v1",
+      "sha": "b80192116c39609ddcc9f7ecfded83766bbae82c",
+      "commits": 7,
+      "kind": "submodule",
+      "path": "loadbalancer"
+    },
+    {
+      "name": "token-bucket",
+      "url": "https://github.com/rushikeshg25/token-bucket/pull/1",
+      "branch": "codex/token-bucket-v1",
+      "sha": "fea4a4a6095a6096147ce2c0f8771b0e7b8cf349",
+      "commits": 6,
+      "kind": "submodule",
+      "path": "token-bucket"
+    },
+    {
+      "name": "p2p-file-sharing",
+      "url": "https://github.com/rushikeshg25/p2p-file-sharing/pull/1",
+      "branch": "codex/p2p-file-sharing-v1",
+      "sha": "fd27ca7769b86620d2516b84039396f3679a02e7",
+      "commits": 6,
+      "kind": "submodule",
+      "path": "p2p-file-sharing"
+    },
+    {
+      "name": "task-scheduler",
+      "url": "https://github.com/rushikeshg25/task-scheduler/pull/1",
+      "branch": "codex/task-scheduler-v1",
+      "sha": "5a3cfa570ec62055e811fcc48b0df8b58dea9aac",
+      "commits": 6,
+      "kind": "submodule",
+      "path": "task-scheduler"
+    },
+    {
+      "name": "websockets",
+      "url": "https://github.com/rushikeshg25/go-core-impl/pull/2",
+      "branch": "codex/websockets-v1",
+      "sha": "ac3f012561c763e9557c5b95ef76c34aa8a1966d",
+      "commits": 6,
+      "kind": "directory",
+      "path": "websockets"
+    },
+    {
+      "name": "wal-go",
+      "url": "https://github.com/rushikeshg25/wal-go/pull/1",
+      "branch": "codex/wal-go-v1",
+      "sha": "707f6288910a58b4e8189a8439f5908d8e6ce092",
+      "commits": 7,
+      "kind": "submodule",
+      "path": "wal-go"
+    },
+    {
+      "name": "durable-logs",
+      "url": "https://github.com/rushikeshg25/go-core-impl/pull/3",
+      "branch": "codex/durable-logs-v1",
+      "sha": "37c58d9ed585ec21955a7f5591c5e4f020449ab9",
+      "commits": 8,
+      "kind": "directory",
+      "path": "durable-logs"
+    },
+    {
+      "name": "hls",
+      "url": "https://github.com/rushikeshg25/go-core-impl/pull/4",
+      "branch": "codex/hls-v1",
+      "sha": "063f0410b0953e66981c382fded94860fe51a233",
+      "commits": 8,
+      "kind": "directory",
+      "path": "hls"
+    },
+    {
+      "name": "adaptive-bitrate-streaming",
+      "url": "https://github.com/rushikeshg25/adaptive-bitrate-streaming/pull/1",
+      "branch": "codex/adaptive-bitrate-streaming-v1",
+      "sha": "d1f727539c1ac3f0ea1730df42f2c769b030c2f3",
+      "commits": 10,
+      "kind": "submodule",
+      "path": "adaptive-bitrate-streaming"
+    },
+    {
+      "name": "raft",
+      "url": "https://github.com/rushikeshg25/go-core-impl/pull/5",
+      "branch": "codex/raft-v1",
+      "sha": "0a6456e91dd04fe31652564103ccfc77b6af9407",
+      "commits": 10,
+      "kind": "directory",
+      "path": "RAFT"
+    },
+    {
+      "name": "bp-tree",
+      "url": "https://github.com/rushikeshg25/bp-tree/pull/1",
+      "branch": "codex/bp-tree-v1",
+      "sha": "71bd1e88c7f00dfd81cbc41f4338a61dea4f1282",
+      "commits": 6,
+      "kind": "submodule",
+      "path": "bp-tree"
+    },
+    {
+      "name": "event-loop",
+      "url": "https://github.com/rushikeshg25/go-core-impl/pull/1",
+      "branch": "codex/event-loop-v1",
+      "sha": "1bf55b621885cc3127af35ed9ce356432d7733ce",
+      "commits": 7,
+      "kind": "directory",
+      "path": "event-loop"
+    },
+    {
+      "name": "tricolor-gc",
+      "url": "https://github.com/rushikeshg25/tricolor-gc/pull/1",
+      "branch": "codex/tricolor-gc-v1",
+      "sha": "d213b71f69c8820222f411f88acd48680bdb4d33",
+      "commits": 6,
+      "kind": "submodule",
+      "path": "tricolor-gc"
+    }
+  ]
+}
