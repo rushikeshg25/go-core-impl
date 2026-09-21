@@ -10,7 +10,7 @@ npm ci
 npm run dev
 ```
 
-Open the client URL printed by Vite. Upload a video, watch its processing state, and play its generated HLS playlist. The server listens on localhost port 8080; the development UI uses that endpoint.
+Open the client URL printed by Vite. Upload a video, watch its processing state, and play its generated HLS playlist. The server binds port 8080 on all interfaces; the development UI connects to localhost:8080.
 
 - POST `/api/videos`: multipart `file`, 1 byte to 100 MiB; returns 202 with an ID and processing state.
 - GET `/api/videos`: current library.
