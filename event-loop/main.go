@@ -1,16 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"sync"
 )
 
 // Event runs Task and then Callback. Async tasks use a bounded pool.
 type Event struct {
-	Task     func()
-	Callback func()
-	Async    bool
-	isAsync  bool
+	// Context defaults to Background. Cancellation before execution skips the task.
+	Context context.Context
+	// TaskContext takes precedence over Task and cooperates with cancellation.
+	TaskContext func(context.Context)
+	Task        func()
+	Callback    func()
+	Async       bool
+	isAsync     bool
 }
 type EventLoop struct {
 	Events    chan Event
@@ -37,6 +42,21 @@ func invoke(f func()) {
 		f()
 	}
 }
+func runTask(e Event) {
+	ctx := e.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if ctx.Err() != nil {
+		return
+	}
+	if e.TaskContext != nil {
+		e.TaskContext(ctx)
+	} else {
+		invoke(e.Task)
+	}
+}
+
 func (el *EventLoop) run() {
 	defer el.wg.Done()
 	defer close(el.done)
@@ -56,16 +76,16 @@ func (el *EventLoop) run() {
 		case e := <-events:
 			if e.Async || e.isAsync {
 				active++
-				go func() { invoke(e.Task); completed <- e }()
+				go func() { runTask(e); completed <- e }()
 			} else {
-				invoke(e.Task)
+				runTask(e)
 				invoke(e.Callback)
 			}
 		case e := <-completed:
 			active--
 			invoke(e.Callback)
 		case e := <-el.Callbacks:
-			invoke(e.Task)
+			runTask(e)
 			invoke(e.Callback)
 		case <-stop:
 			stopping = true
